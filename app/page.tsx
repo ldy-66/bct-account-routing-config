@@ -48,6 +48,8 @@ const productContractMap: Record<Product, ContractType> = {
   ETF: "公募基金",
   可转债: "可转债",
 };
+const marketLabel = (market: Market) => `${market}（${marketExchangeMap[market].join("、")}）`;
+const productLabel = (product: Product) => `${product}（${productContractMap[product]}）`;
 
 const sourceTemplates: SourceTemplate[] = [
   {
@@ -227,7 +229,7 @@ export default function Home() {
             <tbody>
               {permissions.map((permission, index) => (
                 <tr key={permission.id}>
-                  <td><select aria-label={`第 ${index + 1} 行市场`} value={permission.market} onChange={(event) => updateMarket(permission.id, event.target.value as Market)}>{allMarkets.filter((market) => market === permission.market || !permissions.some((item) => item.market === market)).map((market) => <option key={market}>{market}</option>)}</select></td>
+                  <td><select aria-label={`第 ${index + 1} 行市场`} value={permission.market} onChange={(event) => updateMarket(permission.id, event.target.value as Market)}>{allMarkets.filter((market) => market === permission.market || !permissions.some((item) => item.market === market)).map((market) => <option key={market} value={market}>{marketLabel(market)}</option>)}</select></td>
                   <td><ProductSelect permission={permission} onChange={(product, checked) => updateProducts(permission.id, product, checked)} /></td>
                   <td className="actions"><button onClick={() => deletePermission(permission.id)}>删除</button></td>
                 </tr>
@@ -251,8 +253,8 @@ export default function Home() {
               {rules.map((rule) => {
                 const permission = permissions.find((item) => item.market === rule.market);
                 return <tr key={rule.id}>
-                  <td><select aria-label="股票市场" value={rule.market} disabled={!permissions.length} onChange={(event) => changeRuleMarket(rule, event.target.value as Market)}>{!permissions.length && <option value="">请先配置上方权限</option>}{permissions.map((item) => <option key={item.market}>{item.market}</option>)}</select></td>
-                  <td><select aria-label="品种" value={rule.product} disabled={!permission?.products.length} onChange={(event) => updateRule(rule.id, { product: event.target.value as Product })}>{!permission?.products.length && <option value="">请先配置该市场品种</option>}{permission?.products.map((product) => <option key={product}>{product}</option>)}</select></td>
+                  <td><select aria-label="股票市场" value={rule.market} disabled={!permissions.length} onChange={(event) => changeRuleMarket(rule, event.target.value as Market)}>{!permissions.length && <option value="">请先配置上方权限</option>}{permissions.map((item) => <option key={item.market} value={item.market}>{marketLabel(item.market)}</option>)}</select></td>
+                  <td><select aria-label="品种" value={rule.product} disabled={!permission?.products.length} onChange={(event) => updateRule(rule.id, { product: event.target.value as Product })}>{!permission?.products.length && <option value="">请先配置该市场品种</option>}{permission?.products.map((product) => <option key={product} value={product}>{productLabel(product)}</option>)}</select></td>
                   <td><select aria-label="报单排序模板" value={rule.routeTemplate} onChange={(event) => updateRule(rule.id, { routeTemplate: event.target.value })}>{[...new Set([...routeTemplates, rule.routeTemplate])].map((template) => <option key={template}>{template}</option>)}</select></td>
                   <td><select aria-label="交易方向" value={rule.direction} onChange={(event) => updateRule(rule.id, { direction: event.target.value as Direction })}><option>买</option><option>卖</option></select></td>
                   <td className="actions"><button onClick={() => setRules(rules.filter((item) => item.id !== rule.id))}>删除</button></td>
@@ -274,8 +276,8 @@ export default function Home() {
 
 function ProductSelect({ permission, onChange }: { permission: Permission; onChange: (product: Product, checked: boolean) => void }) {
   return <details className="product-select">
-    <summary>{permission.products.length ? <><span>{permission.products[0]}</span>{permission.products.length > 1 && <b>+{permission.products.length - 1}</b>}</> : <span className="placeholder">请选择</span>}</summary>
-    <div className="product-options">{allProducts.map((product) => <label key={product}><input type="checkbox" checked={permission.products.includes(product)} onChange={(event) => onChange(product, event.target.checked)} /><span>{product}</span></label>)}</div>
+    <summary>{permission.products.length ? <><span>{productLabel(permission.products[0])}</span>{permission.products.length > 1 && <b>+{permission.products.length - 1}</b>}</> : <span className="placeholder">请选择</span>}</summary>
+    <div className="product-options">{allProducts.map((product) => <label key={product}><input type="checkbox" checked={permission.products.includes(product)} onChange={(event) => onChange(product, event.target.checked)} /><span>{productLabel(product)}</span></label>)}</div>
   </details>;
 }
 
@@ -288,15 +290,15 @@ function ImportDialog({ permissions, template, selectedTemplate, setSelectedTemp
 
         <h3>自动映射关系</h3>
         <div className="mapping-grid">
-          <div className="mapping-card"><b>股票市场 → 交易所</b>{permissions.map((permission) => <p key={permission.id}><span>{permission.market}</span><i>→</i><em>{marketExchangeMap[permission.market].join("、")}</em></p>)}</div>
-          <div className="mapping-card"><b>品种 → 合约类型</b>{allProducts.map((product) => <p key={product}><span>{product}</span><i>→</i><em>{productContractMap[product]}</em></p>)}</div>
+          <div className="mapping-card"><b>股票市场（模板交易所）</b>{permissions.map((permission) => <p key={permission.id}>{marketLabel(permission.market)}</p>)}</div>
+          <div className="mapping-card"><b>品种（模板合约类型）</b>{allProducts.map((product) => <p key={product}>{productLabel(product)}</p>)}</div>
         </div>
 
         <div className="preview-heading"><h3>匹配结果</h3><span>已排除期货及非普通交易，共 {preview.length} 条</span></div>
         <div className="table-wrap preview-table-wrap">
           <table className="preview-table">
-            <thead><tr><th>股票市场</th><th>品种</th><th>模板内交易所</th><th>顺序名称</th><th>交易方向</th></tr></thead>
-            <tbody>{preview.map((rule) => <tr key={rule.id}><td>{rule.market}</td><td>{rule.product}</td><td>{marketExchangeMap[rule.market as Market].join("、")}</td><td>{rule.routeTemplate}</td><td>{rule.direction}</td></tr>)}{!preview.length && <tr><td colSpan={5} className="empty-cell">当前权限与该模板没有可导入的匹配项</td></tr>}</tbody>
+            <thead><tr><th>股票市场（模板交易所）</th><th>品种（模板合约类型）</th><th>顺序名称</th><th>交易方向</th></tr></thead>
+            <tbody>{preview.map((rule) => <tr key={rule.id}><td>{marketLabel(rule.market as Market)}</td><td>{productLabel(rule.product as Product)}</td><td>{rule.routeTemplate}</td><td>{rule.direction}</td></tr>)}{!preview.length && <tr><td colSpan={4} className="empty-cell">当前权限与该模板没有可导入的匹配项</td></tr>}</tbody>
           </table>
         </div>
       </div>
