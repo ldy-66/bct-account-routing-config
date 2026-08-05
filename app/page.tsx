@@ -124,7 +124,19 @@ function TemplateConfigModal({ rules, setRules, onCancel, onSave }: { rules: Rul
         <div className="table-panel compact-table-panel">
           <div className="table-scroll">
             <table className="rule-table">
-              <thead><tr><th>交易类型</th><th>交易所</th><th><em>*</em> 报单排序模板</th><th><em>*</em> 买卖方向</th><th><em>*</em> 开平标识</th><th>操作</th></tr></thead>
+              <thead>
+                <tr className="group-header">
+                  <th rowSpan={2}>交易类型</th>
+                  <th rowSpan={2}>交易所</th>
+                  <th rowSpan={2}><em>*</em> 报单排序模板</th>
+                  <th colSpan={2} className="direction-group"><em>*</em> 交易方向</th>
+                  <th rowSpan={2}>操作</th>
+                </tr>
+                <tr className="direction-subheader">
+                  <th>买卖</th>
+                  <th>开平标识</th>
+                </tr>
+              </thead>
               <tbody>{rules.map((rule) => <tr key={rule.id}>
                 <td>普通交易</td>
                 <td><TagList items={inheritedExchanges} /></td>
