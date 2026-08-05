@@ -9,17 +9,17 @@ export async function generateMetadata(): Promise<Metadata> {
   const origin = `${protocol}://${host}`;
   return {
     metadataBase: new URL(origin),
-    title: "BCT 交易账户开户 · 智能路由配置",
-    description: "交易账户开户与报单排序规则配置演示",
+    title: "BCT 开户权限与报单排序配置",
+    description: "开户股票市场权限与报单排序规则联动配置",
     icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
     openGraph: {
-      title: "BCT 智能路由配置",
-      description: "交易账户开户 · 报单排序",
+      title: "BCT 开户权限与报单排序配置",
+      description: "股票市场权限与报单排序联动配置",
       type: "website",
       url: origin,
       images: [{ url: `${origin}/og.png`, width: 1672, height: 941, alt: "BCT 智能路由配置" }],
     },
-    twitter: { card: "summary_large_image", title: "BCT 智能路由配置", description: "交易账户开户 · 报单排序", images: [`${origin}/og.png`] },
+    twitter: { card: "summary_large_image", title: "BCT 开户权限与报单排序配置", description: "股票市场权限与报单排序联动配置", images: [`${origin}/og.png`] },
   };
 }
 
