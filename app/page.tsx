@@ -89,6 +89,7 @@ export default function Home() {
   const [permissions, setPermissions] = useState<Permission[]>(defaultPermissions);
   const [rules, setRules] = useState<Rule[]>(defaultRules);
   const [importOpen, setImportOpen] = useState(false);
+  const [openProductId, setOpenProductId] = useState<number | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState(sourceTemplates[0].name);
   const [toast, setToast] = useState("");
 
@@ -102,6 +103,14 @@ export default function Home() {
     } catch {
       // 本地数据异常时继续使用示例配置。
     }
+  }, []);
+
+  useEffect(() => {
+    const closeProductSelect = (event: PointerEvent) => {
+      if (!(event.target as Element).closest(".product-select")) setOpenProductId(null);
+    };
+    document.addEventListener("pointerdown", closeProductSelect);
+    return () => document.removeEventListener("pointerdown", closeProductSelect);
   }, []);
 
   const unusedMarkets = useMemo(
@@ -223,14 +232,14 @@ export default function Home() {
           <h1 id="permission-title">互换交易权限</h1>
           <button className="primary-button" onClick={addPermission} disabled={!unusedMarkets.length}>新增</button>
         </header>
-        <div className="table-wrap">
+        <div className="table-wrap permission-table-wrap">
           <table className="permission-table">
             <thead><tr><th>市场</th><th>品种</th><th>操作</th></tr></thead>
             <tbody>
               {permissions.map((permission, index) => (
                 <tr key={permission.id}>
                   <td><select aria-label={`第 ${index + 1} 行市场`} value={permission.market} onChange={(event) => updateMarket(permission.id, event.target.value as Market)}>{allMarkets.filter((market) => market === permission.market || !permissions.some((item) => item.market === market)).map((market) => <option key={market} value={market}>{marketLabel(market)}</option>)}</select></td>
-                  <td><ProductSelect permission={permission} onChange={(product, checked) => updateProducts(permission.id, product, checked)} /></td>
+                  <td><ProductSelect permission={permission} open={openProductId === permission.id} onToggle={() => setOpenProductId(openProductId === permission.id ? null : permission.id)} onChange={(product, checked) => updateProducts(permission.id, product, checked)} /></td>
                   <td className="actions"><button onClick={() => deletePermission(permission.id)}>删除</button></td>
                 </tr>
               ))}
@@ -274,11 +283,11 @@ export default function Home() {
   );
 }
 
-function ProductSelect({ permission, onChange }: { permission: Permission; onChange: (product: Product, checked: boolean) => void }) {
-  return <details className="product-select">
-    <summary>{permission.products.length ? <><span>{productLabel(permission.products[0])}</span>{permission.products.length > 1 && <b>+{permission.products.length - 1}</b>}</> : <span className="placeholder">请选择</span>}</summary>
-    <div className="product-options">{allProducts.map((product) => <label key={product}><input type="checkbox" checked={permission.products.includes(product)} onChange={(event) => onChange(product, event.target.checked)} /><span>{productLabel(product)}</span></label>)}</div>
-  </details>;
+function ProductSelect({ permission, open, onToggle, onChange }: { permission: Permission; open: boolean; onToggle: () => void; onChange: (product: Product, checked: boolean) => void }) {
+  return <div className={`product-select${open ? " open" : ""}`}>
+    <button type="button" className="product-trigger" aria-haspopup="listbox" aria-expanded={open} onClick={onToggle}>{permission.products.length ? <><span>{productLabel(permission.products[0])}</span>{permission.products.length > 1 && <b>+{permission.products.length - 1}</b>}</> : <span className="placeholder">请选择</span>}</button>
+    {open && <div className="product-options" role="listbox">{allProducts.map((product) => <label key={product}><input type="checkbox" checked={permission.products.includes(product)} onChange={(event) => onChange(product, event.target.checked)} /><span>{productLabel(product)}</span></label>)}</div>}
+  </div>;
 }
 
 function ImportDialog({ permissions, template, selectedTemplate, setSelectedTemplate, preview, onCancel, onImport }: { permissions: Permission[]; template: SourceTemplate; selectedTemplate: string; setSelectedTemplate: (name: string) => void; preview: Rule[]; onCancel: () => void; onImport: () => void }) {
