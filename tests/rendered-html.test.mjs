@@ -41,9 +41,10 @@ test("server-renders the two account configuration modules", async () => {
 });
 
 test("implements permission-aware three-state template import", async () => {
-  const [page, css] = await Promise.all([
+  const [page, css, mappingGuide] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../public/template-import-mapping-guide.docx", import.meta.url)),
   ]);
 
   assert.match(page, /status:\s*"success"\s*\|\s*"warning"\s*\|\s*"error"/);
@@ -57,4 +58,9 @@ test("implements permission-aware three-state template import", async () => {
   assert.match(css, /\.import-status\.success/);
   assert.match(css, /\.import-status\.warning/);
   assert.match(css, /\.import-status\.error/);
+  assert.match(page, /下载《模板导入映射规则》/);
+  assert.match(page, /导入校验摘要/);
+  assert.doesNotMatch(page, /自动映射关系/);
+  assert.doesNotMatch(page, /可导入结果/);
+  assert.equal(mappingGuide.subarray(0, 2).toString("ascii"), "PK");
 });

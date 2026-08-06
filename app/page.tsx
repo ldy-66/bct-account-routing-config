@@ -321,7 +321,7 @@ export default function Home() {
       </section>
 
       <footer className="page-footer"><button className="save-button" onClick={save}>保存</button></footer>
-      {importOpen && <ImportDialog permissions={permissions} selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} analysis={importAnalysis} onCancel={() => setImportOpen(false)} onImport={importTemplate} />}
+      {importOpen && <ImportDialog selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} analysis={importAnalysis} onCancel={() => setImportOpen(false)} onImport={importTemplate} />}
       {toast && <div className="toast">✓ {toast}</div>}
     </main>
   );
@@ -334,7 +334,7 @@ function ProductSelect({ permission, open, onToggle, onChange }: { permission: P
   </div>;
 }
 
-function ImportDialog({ permissions, selectedTemplate, setSelectedTemplate, analysis, onCancel, onImport }: { permissions: Permission[]; selectedTemplate: string; setSelectedTemplate: (name: string) => void; analysis: ImportAnalysis; onCancel: () => void; onImport: () => void }) {
+function ImportDialog({ selectedTemplate, setSelectedTemplate, analysis, onCancel, onImport }: { selectedTemplate: string; setSelectedTemplate: (name: string) => void; analysis: ImportAnalysis; onCancel: () => void; onImport: () => void }) {
   const statusCopy = analysis.status === "success"
     ? `模板配置 ${analysis.sourceRowCount} 行均可匹配，将生成 ${analysis.preview.length} 条开户规则。`
     : analysis.status === "warning"
@@ -344,12 +344,9 @@ function ImportDialog({ permissions, selectedTemplate, setSelectedTemplate, anal
     <section className="import-dialog" role="dialog" aria-modal="true" aria-labelledby="import-title">
       <header className="dialog-titlebar"><div><h2 id="import-title">从模板配置导入</h2><p>模板配置为只读数据，本操作只更新当前账户的报单排序配置</p></div><button aria-label="关闭" onClick={onCancel}>×</button></header>
       <div className="dialog-content">
-        <label className="template-field"><span>选择模板</span><select value={selectedTemplate} onChange={(event) => setSelectedTemplate(event.target.value)}>{sourceTemplates.map((item) => <option key={item.name} value={item.name}>{item.name}（{item.remark}）</option>)}</select></label>
-
-        <h3>自动映射关系</h3>
-        <div className="mapping-grid">
-          <div className="mapping-card"><b>股票市场（模板交易所）</b>{permissions.map((permission) => <p key={permission.id}>{marketLabel(permission.market)}</p>)}</div>
-          <div className="mapping-card"><b>品种（模板合约类型）</b>{allProducts.map((product) => <p key={product}>{productLabel(product)}</p>)}</div>
+        <div className="template-row">
+          <label className="template-field"><span>选择模板</span><select value={selectedTemplate} onChange={(event) => setSelectedTemplate(event.target.value)}>{sourceTemplates.map((item) => <option key={item.name} value={item.name}>{item.name}（{item.remark}）</option>)}</select></label>
+          <a className="mapping-download" href="/template-import-mapping-guide.docx" download="报单排序模板导入映射规则.docx">下载《模板导入映射规则》</a>
         </div>
 
         <div className={`import-status ${analysis.status}`} role={analysis.status === "error" ? "alert" : "status"}>
@@ -357,23 +354,16 @@ function ImportDialog({ permissions, selectedTemplate, setSelectedTemplate, anal
           <span>{statusCopy}</span>
         </div>
 
-        {!!analysis.issues.length && <div className="issue-panel">
-          <h3>跳过明细</h3>
-          <div className="table-wrap issue-table-wrap">
-            <table className="issue-table">
-              <thead><tr><th>模板配置/映射项</th><th>原因</th><th>处理</th></tr></thead>
-              <tbody>{analysis.issues.map((issue, index) => <tr key={`${issue.source}-${index}`}><td>{issue.source}</td><td>{issue.reason}</td><td>{issue.kind === "permission" ? "权限不匹配，跳过" : "业务不支持，跳过"}</td></tr>)}</tbody>
-            </table>
-          </div>
-        </div>}
-
-        <div className="preview-heading"><h3>可导入结果</h3><span>共 {analysis.preview.length} 条开户规则</span></div>
-        <div className="table-wrap preview-table-wrap">
-          <table className="preview-table">
-            <thead><tr><th>股票市场（模板交易所）</th><th>品种（模板合约类型）</th><th>顺序名称</th><th>交易方向</th></tr></thead>
-            <tbody>{analysis.preview.map((rule) => <tr key={rule.id}><td>{marketLabel(rule.market as Market)}</td><td>{productLabel(rule.product as Product)}</td><td>{rule.routeTemplate}</td><td>{rule.direction}</td></tr>)}{!analysis.preview.length && <tr><td colSpan={4} className="empty-cell">当前权限与该模板没有可导入的匹配项</td></tr>}</tbody>
-          </table>
+        <div className="import-summary" aria-label="导入校验摘要">
+          <span><b>{analysis.sourceRowCount}</b> 模板配置</span>
+          <span><b>{analysis.preview.length}</b> 可导入规则</span>
+          <span><b>{analysis.issues.length}</b> 跳过项</span>
         </div>
+
+        {!!analysis.issues.length && <details className="issue-details">
+          <summary>查看 {analysis.issues.length} 项未导入原因</summary>
+          <ul>{analysis.issues.map((issue, index) => <li key={`${issue.source}-${index}`}><span>{issue.source}</span><b>{issue.reason}</b></li>)}</ul>
+        </details>}
       </div>
       <footer className="dialog-footer"><span>{analysis.preview.length ? "确认后将使用匹配结果覆盖下方当前配置" : "请更换模板或调整上方交易权限"}</span><button className="secondary-button" onClick={onCancel}>取消</button><button className="save-button" disabled={!analysis.preview.length} onClick={onImport}>{analysis.status === "warning" ? `仅导入 ${analysis.preview.length} 条匹配规则` : analysis.preview.length ? `确认导入 ${analysis.preview.length} 条` : "无可导入规则"}</button></footer>
     </section>
