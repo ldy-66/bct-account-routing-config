@@ -35,6 +35,19 @@ type SourceTemplate = {
   rows: TemplateRow[];
 };
 
+type ImportIssue = {
+  source: string;
+  reason: string;
+  kind: "permission" | "unsupported";
+};
+
+type ImportAnalysis = {
+  preview: Rule[];
+  issues: ImportIssue[];
+  status: "success" | "warning" | "error";
+  sourceRowCount: number;
+};
+
 const allMarkets: Market[] = ["沪深", "港股", "美股"];
 const allProducts: Product[] = ["股票", "ETF", "可转债"];
 const routeTemplates = ["默认模板", "test1", "test2", "买单模板", "卖单模板"];
@@ -98,6 +111,8 @@ export default function Home() {
       const saved = localStorage.getItem(storageKey);
       if (!saved) return;
       const parsed = JSON.parse(saved) as { permissions?: Permission[]; rules?: Rule[] };
+      // 浏览器存储只能在挂载后读取，此处恢复用户上次保存的本地配置。
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (Array.isArray(parsed.permissions)) setPermissions(parsed.permissions);
       if (Array.isArray(parsed.rules)) setRules(parsed.rules);
     } catch {
@@ -120,25 +135,54 @@ export default function Home() {
 
   const currentTemplate = sourceTemplates.find((template) => template.name === selectedTemplate) ?? sourceTemplates[0];
 
-  const importPreview = useMemo(() => {
+  const importAnalysis = useMemo<ImportAnalysis>(() => {
     const imported: Rule[] = [];
-    permissions.forEach((permission) => {
-      permission.products.forEach((product) => {
-        const exchanges = marketExchangeMap[permission.market];
-        currentTemplate.rows
-          .filter((row) => row.businessType === "普通交易")
-          .filter((row) => row.contractType === productContractMap[product])
-          .filter((row) => row.exchanges.some((exchange) => exchanges.includes(exchange)))
-          .forEach((row) => imported.push({
-            id: makeId() + imported.length,
-            market: permission.market,
-            product,
-            routeTemplate: row.routeName,
-            direction: normalizeDirection(row.direction),
-          }));
+    const issues: ImportIssue[] = [];
+    currentTemplate.rows.forEach((row, rowIndex) => {
+      const source = `第 ${rowIndex + 1} 行：${row.businessType} / ${row.contractType} / ${row.exchanges.join("、")}`;
+      if (row.businessType !== "普通交易") {
+        issues.push({ source, reason: "当前开户仅支持普通交易", kind: "unsupported" });
+        return;
+      }
+      if (row.contractType === "期货" || row.contractType === "指数期货") {
+        issues.push({ source, reason: "当前民营券商业务不支持期货", kind: "unsupported" });
+        return;
+      }
+      const product = allProducts.find((item) => productContractMap[item] === row.contractType);
+      if (!product) {
+        issues.push({ source, reason: `合约类型“${row.contractType}”没有开户品种映射`, kind: "unsupported" });
+        return;
+      }
+      const candidateMarkets = allMarkets.filter((market) => row.exchanges.some((exchange) => marketExchangeMap[market].includes(exchange)));
+      if (!candidateMarkets.length) {
+        issues.push({ source, reason: "模板交易所没有对应的开户股票市场", kind: "unsupported" });
+        return;
+      }
+      candidateMarkets.forEach((market) => {
+        const permission = permissions.find((item) => item.market === market);
+        if (!permission) {
+          issues.push({ source: `${marketLabel(market)} / ${productLabel(product)}`, reason: `账户未开通${market}市场权限`, kind: "permission" });
+          return;
+        }
+        if (!permission.products.includes(product)) {
+          issues.push({ source: `${marketLabel(market)} / ${productLabel(product)}`, reason: `${market}市场未开通${product}品种`, kind: "permission" });
+          return;
+        }
+        imported.push({
+          id: makeId() + imported.length,
+          market,
+          product,
+          routeTemplate: row.routeName,
+          direction: normalizeDirection(row.direction),
+        });
       });
     });
-    return imported;
+    return {
+      preview: imported,
+      issues,
+      status: imported.length === 0 ? "error" : issues.length ? "warning" : "success",
+      sourceRowCount: currentTemplate.rows.length,
+    };
   }, [currentTemplate, permissions]);
 
   const flash = (message: string) => {
@@ -215,9 +259,9 @@ export default function Home() {
   }]);
 
   const importTemplate = () => {
-    setRules(importPreview);
+    setRules(importAnalysis.preview);
     setImportOpen(false);
-    flash(`已从“${currentTemplate.name}”导入 ${importPreview.length} 条匹配规则`);
+    flash(`已从“${currentTemplate.name}”导入 ${importAnalysis.preview.length} 条匹配规则`);
   };
 
   const save = () => {
@@ -277,7 +321,7 @@ export default function Home() {
       </section>
 
       <footer className="page-footer"><button className="save-button" onClick={save}>保存</button></footer>
-      {importOpen && <ImportDialog permissions={permissions} template={currentTemplate} selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} preview={importPreview} onCancel={() => setImportOpen(false)} onImport={importTemplate} />}
+      {importOpen && <ImportDialog permissions={permissions} selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} analysis={importAnalysis} onCancel={() => setImportOpen(false)} onImport={importTemplate} />}
       {toast && <div className="toast">✓ {toast}</div>}
     </main>
   );
@@ -290,7 +334,12 @@ function ProductSelect({ permission, open, onToggle, onChange }: { permission: P
   </div>;
 }
 
-function ImportDialog({ permissions, template, selectedTemplate, setSelectedTemplate, preview, onCancel, onImport }: { permissions: Permission[]; template: SourceTemplate; selectedTemplate: string; setSelectedTemplate: (name: string) => void; preview: Rule[]; onCancel: () => void; onImport: () => void }) {
+function ImportDialog({ permissions, selectedTemplate, setSelectedTemplate, analysis, onCancel, onImport }: { permissions: Permission[]; selectedTemplate: string; setSelectedTemplate: (name: string) => void; analysis: ImportAnalysis; onCancel: () => void; onImport: () => void }) {
+  const statusCopy = analysis.status === "success"
+    ? `模板配置 ${analysis.sourceRowCount} 行均可匹配，将生成 ${analysis.preview.length} 条开户规则。`
+    : analysis.status === "warning"
+      ? `模板配置 ${analysis.sourceRowCount} 行，将生成 ${analysis.preview.length} 条开户规则；${analysis.issues.length} 项因权限不匹配或业务不支持而跳过。`
+      : "当前模板没有符合账户交易权限的报单排序规则，请更换模板或先调整交易权限。";
   return <div className="modal-mask" onMouseDown={(event) => event.target === event.currentTarget && onCancel()}>
     <section className="import-dialog" role="dialog" aria-modal="true" aria-labelledby="import-title">
       <header className="dialog-titlebar"><div><h2 id="import-title">从模板配置导入</h2><p>模板配置为只读数据，本操作只更新当前账户的报单排序配置</p></div><button aria-label="关闭" onClick={onCancel}>×</button></header>
@@ -303,15 +352,30 @@ function ImportDialog({ permissions, template, selectedTemplate, setSelectedTemp
           <div className="mapping-card"><b>品种（模板合约类型）</b>{allProducts.map((product) => <p key={product}>{productLabel(product)}</p>)}</div>
         </div>
 
-        <div className="preview-heading"><h3>匹配结果</h3><span>已排除期货及非普通交易，共 {preview.length} 条</span></div>
+        <div className={`import-status ${analysis.status}`} role={analysis.status === "error" ? "alert" : "status"}>
+          <b>{analysis.status === "success" ? "全部匹配" : analysis.status === "warning" ? "部分匹配" : "无法导入"}</b>
+          <span>{statusCopy}</span>
+        </div>
+
+        {!!analysis.issues.length && <div className="issue-panel">
+          <h3>跳过明细</h3>
+          <div className="table-wrap issue-table-wrap">
+            <table className="issue-table">
+              <thead><tr><th>模板配置/映射项</th><th>原因</th><th>处理</th></tr></thead>
+              <tbody>{analysis.issues.map((issue, index) => <tr key={`${issue.source}-${index}`}><td>{issue.source}</td><td>{issue.reason}</td><td>{issue.kind === "permission" ? "权限不匹配，跳过" : "业务不支持，跳过"}</td></tr>)}</tbody>
+            </table>
+          </div>
+        </div>}
+
+        <div className="preview-heading"><h3>可导入结果</h3><span>共 {analysis.preview.length} 条开户规则</span></div>
         <div className="table-wrap preview-table-wrap">
           <table className="preview-table">
             <thead><tr><th>股票市场（模板交易所）</th><th>品种（模板合约类型）</th><th>顺序名称</th><th>交易方向</th></tr></thead>
-            <tbody>{preview.map((rule) => <tr key={rule.id}><td>{marketLabel(rule.market as Market)}</td><td>{productLabel(rule.product as Product)}</td><td>{rule.routeTemplate}</td><td>{rule.direction}</td></tr>)}{!preview.length && <tr><td colSpan={4} className="empty-cell">当前权限与该模板没有可导入的匹配项</td></tr>}</tbody>
+            <tbody>{analysis.preview.map((rule) => <tr key={rule.id}><td>{marketLabel(rule.market as Market)}</td><td>{productLabel(rule.product as Product)}</td><td>{rule.routeTemplate}</td><td>{rule.direction}</td></tr>)}{!analysis.preview.length && <tr><td colSpan={4} className="empty-cell">当前权限与该模板没有可导入的匹配项</td></tr>}</tbody>
           </table>
         </div>
       </div>
-      <footer className="dialog-footer"><span>确认后将使用匹配结果覆盖下方当前配置</span><button className="secondary-button" onClick={onCancel}>取消</button><button className="save-button" disabled={!preview.length} onClick={onImport}>确认导入</button></footer>
+      <footer className="dialog-footer"><span>{analysis.preview.length ? "确认后将使用匹配结果覆盖下方当前配置" : "请更换模板或调整上方交易权限"}</span><button className="secondary-button" onClick={onCancel}>取消</button><button className="save-button" disabled={!analysis.preview.length} onClick={onImport}>{analysis.status === "warning" ? `仅导入 ${analysis.preview.length} 条匹配规则` : analysis.preview.length ? `确认导入 ${analysis.preview.length} 条` : "无可导入规则"}</button></footer>
     </section>
   </div>;
 }

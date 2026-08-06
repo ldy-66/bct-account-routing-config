@@ -73,6 +73,18 @@ td select:disabled { color:#aaa; background:#f5f5f5; }
 .mapping-card { padding:12px 14px; border:1px solid var(--light-border); background:#fafafa; }
 .mapping-card>b { display:block; margin-bottom:8px; font-weight:500; }
 .mapping-card p { margin:6px 0; color:#555; font-size:12px; line-height:1.5; }
+.import-status { display:grid; grid-template-columns:82px 1fr; gap:8px; align-items:start; margin-top:14px; padding:11px 13px; border:1px solid; line-height:1.5; }
+.import-status b { font-weight:600; }
+.import-status.success { color:#2e7d32; border-color:#b7dfbb; background:#f3fbf4; }
+.import-status.warning { color:#8a5a00; border-color:#f0cf82; background:#fff9e8; }
+.import-status.error { color:#b42318; border-color:#f0b5b0; background:#fff2f0; }
+.issue-panel h3 { margin-bottom:8px; }
+.issue-table-wrap { margin-top:0; max-height:180px; overflow:auto; }
+.issue-table { min-width:760px; }
+.issue-table th:nth-child(1) { width:45%; }
+.issue-table th:nth-child(2) { width:33%; }
+.issue-table th:nth-child(3) { width:22%; }
+.issue-table td { height:38px; font-size:12px; }
 .preview-heading { display:flex; align-items:center; }
 .preview-heading span { margin-left:auto; color:var(--muted); font-size:12px; }
 .preview-table-wrap { margin-top:0; }
