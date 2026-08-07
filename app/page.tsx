@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 type Market = "沪深" | "港股" | "美股";
 type Product = "股票" | "ETF" | "可转债";
 type ContractType = "股票" | "公募基金" | "可转债" | "期货" | "指数期货";
-type Direction = "" | "买" | "卖";
+type Direction = "买" | "卖";
 
 type Permission = {
   id: number;
@@ -65,7 +65,8 @@ const productContractMap: Record<Product, ContractType> = {
 
 const marketLabel = (market: Market) => `${market}（${marketExchangeMap[market].join("、")}）`;
 const productLabel = (product: Product) => `${product}（${productContractMap[product]}）`;
-const ruleId = (market: Market, product: Product) => `${market}-${product}`;
+const allDirections: Direction[] = ["买", "卖"];
+const ruleId = (market: Market, product: Product, direction: Direction) => `${market}-${product}-${direction}`;
 const normalizeDirection = (direction: TemplateRow["direction"]): Direction => direction === "卖出" || direction === "卖平" ? "卖" : "买";
 
 const sourceTemplates: SourceTemplate[] = [
@@ -74,6 +75,7 @@ const sourceTemplates: SourceTemplate[] = [
     remark: "通用",
     rows: [
       { businessType: "普通交易", contractType: "股票", marketTags: ["SH", "SZ", "SHC", "SZC"], direction: "买入", routeName: "test1" },
+      { businessType: "普通交易", contractType: "股票", marketTags: ["SH", "SZ", "SHC", "SZC"], direction: "卖出", routeName: "卖单模板" },
       { businessType: "普通交易", contractType: "股票", marketTags: ["HZ", "HS", "HK"], direction: "卖出", routeName: "卖单模板" },
       { businessType: "普通交易", contractType: "期货", marketTags: ["DCE", "SHF"], direction: "买开", routeName: "test1" },
     ],
@@ -92,8 +94,12 @@ const sourceTemplates: SourceTemplate[] = [
     remark: "沪深/港股",
     rows: [
       { businessType: "普通交易", contractType: "股票", marketTags: ["SH", "SZ", "SHC", "SZC"], direction: "买入", routeName: "买单模板" },
+      { businessType: "普通交易", contractType: "股票", marketTags: ["SH", "SZ", "SHC", "SZC"], direction: "卖出", routeName: "卖单模板" },
+      { businessType: "普通交易", contractType: "公募基金", marketTags: ["SH", "SZ", "SHC", "SZC"], direction: "买入", routeName: "买单模板" },
       { businessType: "普通交易", contractType: "公募基金", marketTags: ["SH", "SZ", "SHC", "SZC"], direction: "卖出", routeName: "卖单模板" },
       { businessType: "普通交易", contractType: "股票", marketTags: ["HZ", "HS", "HK"], direction: "买入", routeName: "默认模板" },
+      { businessType: "普通交易", contractType: "股票", marketTags: ["HZ", "HS", "HK"], direction: "卖出", routeName: "卖单模板" },
+      { businessType: "普通交易", contractType: "公募基金", marketTags: ["HZ", "HS", "HK"], direction: "买入", routeName: "test1" },
       { businessType: "普通交易", contractType: "公募基金", marketTags: ["HZ", "HS", "HK"], direction: "卖出", routeName: "test2" },
     ],
   },
@@ -103,47 +109,48 @@ const defaultPermissions: Permission[] = [
   { id: 1, market: "沪深", products: ["股票", "ETF"] },
 ];
 
-const storageKey = "bct-account-permission-routing-v3";
+const storageKey = "bct-account-permission-routing-v4";
 const makeId = () => Date.now() + Math.floor(Math.random() * 10000);
 
-function findTemplateRow(templateName: string, market: Market, product: Product) {
+function findTemplateRow(templateName: string, market: Market, product: Product, direction: Direction) {
   const template = sourceTemplates.find((item) => item.name === templateName);
   const marketTags = tradingMarketCodeTable[market].templateTags;
   return template?.rows.find((row) =>
     row.businessType === "普通交易"
     && row.contractType === productContractMap[product]
-    && row.marketTags.some((tag) => marketTags.includes(tag)),
+    && row.marketTags.some((tag) => marketTags.includes(tag))
+    && normalizeDirection(row.direction) === direction,
   );
 }
 
-function ruleFromTemplate(market: Market, product: Product, templateName: string): Rule {
-  const matched = findTemplateRow(templateName, market, product);
+function ruleFromTemplate(market: Market, product: Product, direction: Direction, templateName: string): Rule {
+  const matched = findTemplateRow(templateName, market, product, direction);
   return {
-    id: ruleId(market, product),
+    id: ruleId(market, product, direction),
     market,
     product,
     routeTemplate: matched?.routeName ?? "",
-    direction: matched ? normalizeDirection(matched.direction) : "",
+    direction,
   };
 }
 
 function expandPermissionRules(permissions: Permission[], current: Rule[], templateName: string) {
-  const currentMap = new Map(current.map((rule) => [ruleId(rule.market, rule.product), rule]));
+  const currentMap = new Map(current.map((rule) => [ruleId(rule.market, rule.product, rule.direction), rule]));
   return permissions.flatMap((permission) =>
     allProducts
       .filter((product) => permission.products.includes(product))
-      .map((product) => {
-        const existing = currentMap.get(ruleId(permission.market, product));
-        if (!existing) return ruleFromTemplate(permission.market, product, templateName);
-        return {
-          ...existing,
-          id: ruleId(permission.market, product),
-          market: permission.market,
-          product,
-          routeTemplate: existing.routeTemplate ?? "",
-          direction: existing.direction === "买" || existing.direction === "卖" ? existing.direction : "",
-        };
-      }),
+      .flatMap((product) => allDirections.map((direction) => {
+          const existing = currentMap.get(ruleId(permission.market, product, direction));
+          if (!existing) return ruleFromTemplate(permission.market, product, direction, templateName);
+          return {
+            ...existing,
+            id: ruleId(permission.market, product, direction),
+            market: permission.market,
+            product,
+            routeTemplate: existing.routeTemplate ?? "",
+            direction,
+          };
+        })),
   );
 }
 
@@ -151,7 +158,7 @@ function applySourceTemplate(permissions: Permission[], templateName: string) {
   return permissions.flatMap((permission) =>
     allProducts
       .filter((product) => permission.products.includes(product))
-      .map((product) => ruleFromTemplate(permission.market, product, templateName)),
+      .flatMap((product) => allDirections.map((direction) => ruleFromTemplate(permission.market, product, direction, templateName))),
   );
 }
 
@@ -227,12 +234,12 @@ export default function Home() {
     const next = applySourceTemplate(permissions, templateName);
     setSelectedTemplate(templateName);
     setRules(next);
-    const emptyCount = next.filter((rule) => !rule.routeTemplate || !rule.direction).length;
+    const emptyCount = next.filter((rule) => !rule.routeTemplate).length;
     flash(emptyCount ? `已匹配模板，${emptyCount} 条配置需手工补充` : `已按“${templateName}”完成全部匹配`);
   };
 
   const save = () => {
-    const incomplete = rules.filter((rule) => !rule.routeTemplate || !rule.direction);
+    const incomplete = rules.filter((rule) => !rule.routeTemplate);
     if (incomplete.length) {
       flash(`请先完成 ${incomplete.length} 条空白配置`);
       return;
@@ -284,22 +291,21 @@ export default function Home() {
 
       <section className="config-module" aria-labelledby="routing-title">
         <header className="module-header routing-header">
-          <div><h2 id="routing-title">报单排序配置</h2><p>明细由上方“市场 × 品种”自动生成；页面显示名称，保存时按 tradingMarket 码表转换</p></div>
+          <div><h2 id="routing-title">报单排序配置</h2><p>每个“市场 × 品种”固定生成买、卖两行；页面显示名称，保存时按 tradingMarket 码表转换</p></div>
           <div className="template-import-control">
             <label htmlFor="source-template">模板导入</label>
             <select id="source-template" value={selectedTemplate} onChange={(event) => changeSourceTemplate(event.target.value)}>{sourceTemplates.map((item) => <option key={item.name} value={item.name}>{item.name}（{item.remark}）</option>)}</select>
-            <a href="/template-import-mapping-guide.docx" download="报单排序模板导入映射规则.docx">映射规则</a>
           </div>
         </header>
         <div className="table-wrap">
           <table className="rule-table">
-            <thead><tr><th>股票市场</th><th>品种</th><th><em>*</em> 报单排序模板</th><th><em>*</em> 交易方向</th></tr></thead>
+            <thead><tr><th>股票市场</th><th>品种</th><th><em>*</em> 报单排序模板</th><th>交易方向</th></tr></thead>
             <tbody>
-              {rules.map((rule) => <tr key={rule.id} className={!rule.routeTemplate || !rule.direction ? "incomplete-row" : undefined}>
+              {rules.map((rule) => <tr key={rule.id} className={!rule.routeTemplate ? "incomplete-row" : undefined}>
                 <td><span className="readonly-value">{rule.market}</span></td>
                 <td><span className="readonly-value">{rule.product}</span></td>
-                <td><select aria-label={`${rule.market}${rule.product}报单排序模板`} value={rule.routeTemplate} onChange={(event) => updateRule(rule.id, { routeTemplate: event.target.value })}><option value="">请选择</option>{routeTemplates.map((template) => <option key={template} value={template}>{template}</option>)}</select></td>
-                <td><select aria-label={`${rule.market}${rule.product}交易方向`} value={rule.direction} onChange={(event) => updateRule(rule.id, { direction: event.target.value as Direction })}><option value="">请选择</option><option value="买">买</option><option value="卖">卖</option></select></td>
+                <td><select aria-label={`${rule.market}${rule.product}${rule.direction}报单排序模板`} value={rule.routeTemplate} onChange={(event) => updateRule(rule.id, { routeTemplate: event.target.value })}><option value="">请选择</option>{routeTemplates.map((template) => <option key={template} value={template}>{template}</option>)}</select></td>
+                <td><span className="readonly-value">{rule.direction}</span></td>
               </tr>)}
               {!rules.length && <tr><td colSpan={4} className="empty-cell">请先在上方配置市场和品种权限</td></tr>}
             </tbody>

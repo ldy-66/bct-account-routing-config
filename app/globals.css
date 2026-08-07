@@ -17,8 +17,6 @@ button,summary { cursor:pointer; }
 .template-import-control { margin-left:auto; display:flex; align-items:center; gap:9px; }
 .template-import-control label { white-space:nowrap; }
 .template-import-control select { width:250px; height:32px; padding:0 28px 0 9px; border:1px solid #cfcfcf; background:#fff; }
-.template-import-control a { color:#1677c8; white-space:nowrap; text-decoration:none; }
-.template-import-control a:hover { text-decoration:underline; }
 .primary-button,.save-button,.secondary-button { height:32px; padding:0 15px; }
 .primary-button,.save-button { border:1px solid var(--primary); color:#fff; background:var(--primary); }
 .secondary-button { border:1px solid var(--border); color:#333; background:#fff; }

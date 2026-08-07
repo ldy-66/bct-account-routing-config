@@ -25,16 +25,16 @@ test("server-renders the two linked account configuration modules", async () => 
   assert.match(html, />报单排序配置</);
   assert.match(html, /沪深（上交所、深交所）/);
   assert.match(html, /模板导入/);
-  assert.match(html, /映射规则/);
+  assert.match(html, /固定生成买、卖两行/);
+  assert.doesNotMatch(html, /映射规则/);
   assert.doesNotMatch(html, />交易类型</);
   assert.doesNotMatch(html, />开平标识/);
 });
 
-test("derives one routing row per permission product and maps backend code values", async () => {
-  const [page, css, mappingGuide] = await Promise.all([
+test("derives fixed buy and sell rows per permission product and maps backend code values", async () => {
+  const [page, css] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
-    readFile(new URL("../public/template-import-mapping-guide.docx", import.meta.url)),
   ]);
 
   assert.match(page, /沪深:\s*\{\s*codeValue:\s*"A股",\s*templateTags:\s*\["SH",\s*"SZ",\s*"SHC",\s*"SZC"\]/);
@@ -42,13 +42,15 @@ test("derives one routing row per permission product and maps backend code value
   assert.match(page, /美股:\s*\{\s*codeValue:\s*"美股",\s*templateTags:\s*\["N",\s*"A",\s*"O"\]/);
   assert.match(page, /function expandPermissionRules/);
   assert.match(page, /permissions\.flatMap/);
-  assert.match(page, /id:\s*ruleId\(market, product\)/);
+  assert.match(page, /const allDirections:\s*Direction\[\]\s*=\s*\["买",\s*"卖"\]/);
+  assert.match(page, /id:\s*ruleId\(market, product, direction\)/);
   assert.match(page, /routeTemplate:\s*matched\?\.routeName\s*\?\?\s*""/);
-  assert.match(page, /direction:\s*matched\s*\?\s*normalizeDirection\(matched\.direction\)\s*:\s*""/);
+  assert.match(page, /normalizeDirection\(row\.direction\)\s*===\s*direction/);
+  assert.match(page, /<span className="readonly-value">\{rule\.direction\}<\/span>/);
   assert.match(page, /<option value="">请选择<\/option>/);
   assert.match(page, /tradingMarket:\s*tradingMarketCodeTable\[rule\.market\]\.codeValue/);
-  assert.doesNotMatch(page, /ImportDialog|modal-mask|确认导入|匹配状态/);
+  assert.doesNotMatch(page, /ImportDialog|modal-mask|确认导入|匹配状态|映射规则/);
+  assert.doesNotMatch(page, /aria-label=\{`\$\{rule\.market\}\$\{rule\.product\}交易方向`\}/);
   assert.match(css, /\.incomplete-row/);
   assert.match(css, /\.template-import-control/);
-  assert.equal(mappingGuide.subarray(0, 2).toString("ascii"), "PK");
 });
