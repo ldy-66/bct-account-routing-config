@@ -44,12 +44,6 @@ const allMarkets: Market[] = ["沪深", "港股", "美股"];
 const allProducts: Product[] = ["股票", "ETF", "可转债"];
 const routeTemplates = ["默认模板", "test1", "test2", "买单模板", "卖单模板"];
 
-const marketExchangeMap: Record<Market, string[]> = {
-  沪深: ["上交所", "深交所"],
-  港股: ["香港交易所", "深港通", "沪股通"],
-  美股: ["美国证券交易所", "纽约证券交易所"],
-};
-
 // tradingMarket 码表：页面显示中文市场，接口提交码值；模板侧使用码表标签匹配。
 const tradingMarketCodeTable: Record<Market, TradingMarketCode> = {
   沪深: { codeValue: "A股", templateTags: ["SH", "SZ", "SHC", "SZC"] },
@@ -63,7 +57,7 @@ const productContractMap: Record<Product, ContractType> = {
   可转债: "可转债",
 };
 
-const marketLabel = (market: Market) => `${market}（${marketExchangeMap[market].join("、")}）`;
+const marketLabel = (market: Market) => market;
 const productLabel = (product: Product) => `${product}（${productContractMap[product]}）`;
 const allDirections: Direction[] = ["买", "卖"];
 const ruleId = (market: Market, product: Product, direction: Direction) => `${market}-${product}-${direction}`;

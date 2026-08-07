@@ -23,7 +23,9 @@ test("server-renders the two linked account configuration modules", async () => 
   assert.match(html, /<title>BCT 开户权限与报单排序配置<\/title>/i);
   assert.match(html, />互换交易权限</);
   assert.match(html, />报单排序配置</);
-  assert.match(html, /沪深（上交所、深交所）/);
+  assert.match(html, />沪深</);
+  assert.doesNotMatch(html, /沪深（上交所、深交所）/);
+  assert.doesNotMatch(html, /港股（香港交易所、深港通、沪股通）/);
   assert.match(html, /模板导入/);
   assert.match(html, /固定生成买、卖两行/);
   assert.doesNotMatch(html, /映射规则/);
