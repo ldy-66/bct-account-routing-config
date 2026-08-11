@@ -126,4 +126,7 @@ test("groups buy and sell templates by permission product and preserves import v
   assert.match(css, /\.validation-row/);
   assert.match(css, /\.template-import-control/);
   assert.doesNotMatch(css, /\.batch-delete-button|\.selection-cell|\.help-tooltip|\.help-tip/);
+  assert.match(css, /\.config-page \{ width:210mm; min-height:297mm/);
+  assert.match(css, /@page \{ size:A4 portrait; margin:0; \}/);
+  assert.match(css, /\.page-footer \{[^}]*width:210mm/);
 });
