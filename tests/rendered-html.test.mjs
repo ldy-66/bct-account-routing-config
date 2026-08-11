@@ -28,7 +28,7 @@ test("server-renders the two linked account configuration modules", async () => 
   assert.doesNotMatch(html, /港股（香港交易所、深港通、沪股通）/);
   assert.match(html, /模板导入/);
   assert.match(html, /批量删除/);
-  assert.match(html, /条未填写/);
+  assert.doesNotMatch(html, /条未填写/);
   assert.match(html, /删除的账户配置自动使用全局模板/);
   assert.match(html, /固定生成买、卖两行/);
   assert.doesNotMatch(html, /映射规则/);
@@ -59,10 +59,15 @@ test("derives fixed buy and sell rows per permission product and maps backend co
   assert.match(page, /function batchDeleteRules|const batchDeleteRules/);
   assert.match(page, /系统将自动使用全局模板/);
   assert.match(page, /rules\.filter\(\(rule\) => !rule\.routeTemplate\)/);
+  assert.match(page, /该品种不能为空/);
+  assert.match(page, /setValidationRuleIds\(incomplete\.map/);
+  assert.match(page, /validationRuleIds\.includes\(rule\.id\)/);
   assert.doesNotMatch(page, /ImportDialog|modal-mask|确认导入|匹配状态|映射规则/);
   assert.doesNotMatch(page, /aria-label=\{`\$\{rule\.market\}\$\{rule\.product\}交易方向`\}/);
-  assert.match(css, /\.incomplete-row/);
+  assert.match(css, /\.validation-summary/);
+  assert.match(css, /\.validation-row/);
+  assert.match(css, /\.field-error/);
   assert.match(css, /\.template-import-control/);
-  assert.match(css, /\.incomplete-tip/);
+  assert.doesNotMatch(css, /\.incomplete-tip/);
   assert.match(css, /\.batch-delete-button/);
 });
