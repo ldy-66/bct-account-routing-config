@@ -324,6 +324,7 @@ export default function Home() {
         <header className="module-header routing-header">
           <div><h2 id="routing-title">互换交易设置</h2><p>每个“市场 × 品种”固定生成买、卖两行；删除的账户配置自动使用全局模板</p></div>
           <div className="routing-controls">
+            {validationRules.length > 0 && <span id="routing-validation" className="validation-summary" role="alert">该品种不能为空（{validationRules.length}条）</span>}
             <div className="template-import-control">
               <label htmlFor="source-template">模板导入</label>
               <select id="source-template" value={selectedTemplate} onChange={(event) => changeSourceTemplate(event.target.value)}>{sourceTemplates.map((item) => <option key={item.name} value={item.name}>{item.name}（{item.remark}）</option>)}</select>
@@ -331,20 +332,16 @@ export default function Home() {
             <button className="secondary-button batch-delete-button" onClick={batchDeleteRules} disabled={!selectedRuleIds.length}>批量删除</button>
           </div>
         </header>
-        {validationRules.length > 0 && <div id="routing-validation" className="validation-summary" role="alert">
-          <strong>该品种不能为空</strong>
-          <span>请完成：{validationRules.map((rule) => `${rule.market}/${rule.product}/${rule.direction}`).join("、")}</span>
-        </div>}
         <div className="table-wrap">
           <table className="rule-table">
-            <thead><tr><th className="selection-cell"><input type="checkbox" aria-label="选择全部互换交易设置" checked={allRulesSelected} onChange={(event) => toggleAllRules(event.target.checked)} /></th><th>股票市场</th><th>品种</th><th><em>*</em> 报单排序模板</th><th>交易方向</th></tr></thead>
+            <thead><tr><th className="selection-cell"><input type="checkbox" aria-label="选择全部互换交易设置" checked={allRulesSelected} onChange={(event) => toggleAllRules(event.target.checked)} /></th><th>股票市场</th><th>品种</th><th>交易方向</th><th><em>*</em> 报单排序模板</th></tr></thead>
             <tbody>
               {rules.map((rule) => <tr key={rule.id} className={validationRuleIds.includes(rule.id) ? "validation-row" : undefined}>
                 <td className="selection-cell"><input type="checkbox" aria-label={`选择${rule.market}${rule.product}${rule.direction}`} checked={selectedRuleIds.includes(rule.id)} onChange={(event) => toggleRule(rule.id, event.target.checked)} /></td>
                 <td><span className="readonly-value">{rule.market}</span></td>
                 <td><span className="readonly-value">{rule.product}</span></td>
-                <td><select aria-label={`${rule.market}${rule.product}${rule.direction}报单排序模板`} aria-invalid={validationRuleIds.includes(rule.id)} value={rule.routeTemplate} onChange={(event) => updateRule(rule.id, { routeTemplate: event.target.value })}><option value="">请选择</option>{routeTemplates.map((template) => <option key={template} value={template}>{template}</option>)}</select>{validationRuleIds.includes(rule.id) && <span className="field-error">该品种不能为空</span>}</td>
                 <td><span className="readonly-value">{rule.direction}</span></td>
+                <td><select aria-label={`${rule.market}${rule.product}${rule.direction}报单排序模板`} aria-invalid={validationRuleIds.includes(rule.id)} value={rule.routeTemplate} onChange={(event) => updateRule(rule.id, { routeTemplate: event.target.value })}><option value="">请选择</option>{routeTemplates.map((template) => <option key={template} value={template}>{template}</option>)}</select></td>
               </tr>)}
               {!rules.length && <tr><td colSpan={5} className="empty-cell">暂无账户级配置，系统将使用全局模板</td></tr>}
             </tbody>

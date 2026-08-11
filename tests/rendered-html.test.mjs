@@ -62,11 +62,12 @@ test("derives fixed buy and sell rows per permission product and maps backend co
   assert.match(page, /该品种不能为空/);
   assert.match(page, /setValidationRuleIds\(incomplete\.map/);
   assert.match(page, /validationRuleIds\.includes\(rule\.id\)/);
+  assert.match(page, /<th>品种<\/th><th>交易方向<\/th><th><em>\*<\/em> 报单排序模板<\/th>/);
   assert.doesNotMatch(page, /ImportDialog|modal-mask|确认导入|匹配状态|映射规则/);
   assert.doesNotMatch(page, /aria-label=\{`\$\{rule\.market\}\$\{rule\.product\}交易方向`\}/);
   assert.match(css, /\.validation-summary/);
   assert.match(css, /\.validation-row/);
-  assert.match(css, /\.field-error/);
+  assert.doesNotMatch(css, /\.field-error/);
   assert.match(css, /\.template-import-control/);
   assert.doesNotMatch(css, /\.incomplete-tip/);
   assert.match(css, /\.batch-delete-button/);

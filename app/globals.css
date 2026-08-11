@@ -42,8 +42,8 @@ tbody tr:last-child td { border-bottom:0; }
 .rule-table th:nth-child(1) { width:5%; }
 .rule-table th:nth-child(2) { width:23%; }
 .rule-table th:nth-child(3) { width:20%; }
-.rule-table th:nth-child(4) { width:33%; }
-.rule-table th:nth-child(5) { width:19%; }
+.rule-table th:nth-child(4) { width:19%; }
+.rule-table th:nth-child(5) { width:33%; }
 .rule-table em { color:#f5222d; font-style:normal; }
 .selection-cell { padding-left:0; padding-right:0; text-align:center; }
 .selection-cell input { width:15px; height:15px; accent-color:var(--primary); }
@@ -54,12 +54,9 @@ td select:disabled { color:#aaa; background:#f5f5f5; }
 .actions button { padding:2px 4px; border:0; color:var(--danger); background:transparent; }
 .empty-cell { height:74px; color:var(--muted); text-align:center; }
 .readonly-value { display:inline-block; line-height:31px; }
-.validation-summary { margin-top:12px; display:flex; align-items:flex-start; gap:12px; padding:9px 12px; color:#cf1322; border:1px solid #ffccc7; background:#fff2f0; text-align:left; }
-.validation-summary strong { flex:0 0 auto; }
-.validation-summary span { color:#595959; line-height:1.5; }
+.validation-summary { padding:5px 10px; color:#cf1322; border:1px solid #ffccc7; background:#fff2f0; white-space:nowrap; }
 .validation-row td { background:#fff2f0; }
 .validation-row select { border-color:var(--danger); }
-.field-error { display:block; margin-top:4px; color:var(--danger); font-size:12px; line-height:1.4; }
 
 .permission-table-wrap { overflow:visible; }
 .product-select { position:relative; width:100%; }
