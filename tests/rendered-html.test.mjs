@@ -14,7 +14,7 @@ async function render() {
   );
 }
 
-test("server-renders the two linked account configuration modules", async () => {
+test("server-renders the linked account configuration modules with compact routing settings", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -24,54 +24,47 @@ test("server-renders the two linked account configuration modules", async () => 
   assert.match(html, />互换交易权限</);
   assert.match(html, />互换交易设置</);
   assert.match(html, />沪深</);
-  assert.doesNotMatch(html, /沪深（上交所、深交所）/);
-  assert.doesNotMatch(html, /港股（香港交易所、深港通、沪股通）/);
   assert.match(html, /模板导入/);
-  assert.match(html, /批量删除/);
-  assert.doesNotMatch(html, /条未填写/);
-  assert.match(html, /已删除的配置自动使用全局模板/);
-  assert.match(html, /已删除的明细，将自动配置成全局模板/);
-  assert.match(html, /固定生成买、卖两行/);
+  assert.match(html, /不导入（使用全局模板）/);
+  assert.match(html, /买方向模板/);
+  assert.match(html, /卖方向模板/);
+  assert.match(html, /合并为一行/);
+  assert.match(html, /初始使用全局模板/);
+  assert.doesNotMatch(html, /批量删除/);
+  assert.doesNotMatch(html, /已删除的明细/);
+  assert.doesNotMatch(html, /选择全部互换交易设置/);
   assert.doesNotMatch(html, /映射规则/);
   assert.doesNotMatch(html, />交易类型</);
   assert.doesNotMatch(html, />开平标识/);
 });
 
-test("derives fixed buy and sell rows per permission product and maps backend code values", async () => {
+test("groups buy and sell templates by permission product and preserves import validation", async () => {
   const [page, css] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  assert.match(page, /沪深:\s*\{\s*codeValue:\s*"沪深",\s*templateTags:\s*\["SH",\s*"SZ",\s*"SHC",\s*"SZC"\]/);
-  assert.match(page, /港股:\s*\{\s*codeValue:\s*"港股",\s*templateTags:\s*\["HZ",\s*"HS",\s*"HK"\]/);
-  assert.match(page, /美股:\s*\{\s*codeValue:\s*"美股",\s*templateTags:\s*\["N",\s*"A",\s*"O"\]/);
-  assert.match(page, /function expandPermissionRules/);
-  assert.match(page, /permissions\.flatMap/);
-  assert.match(page, /const allDirections:\s*Direction\[\]\s*=\s*\["买",\s*"卖"\]/);
-  assert.match(page, /id:\s*ruleId\(market, product, direction\)/);
-  assert.match(page, /routeTemplate:\s*matched\?\.routeName\s*\?\?\s*""/);
-  assert.match(page, /normalizeDirection\(row\.direction\)\s*===\s*direction/);
-  assert.match(page, /<span className="readonly-value">\{rule\.direction\}<\/span>/);
-  assert.match(page, /<option value="">请选择<\/option>/);
-  assert.match(page, /tradingMarket:\s*tradingMarketCodeTable\[rule\.market\]\.codeValue/);
-  assert.match(page, /const \[deletedRuleIds, setDeletedRuleIds\]/);
-  assert.match(page, /const \[selectedRuleIds, setSelectedRuleIds\]/);
-  assert.match(page, /function batchDeleteRules|const batchDeleteRules/);
-  assert.match(page, /系统将自动使用全局模板/);
+  assert.match(page, /const globalRouteTemplate = "全局模板"/);
+  assert.match(page, /const routeTemplates = \[globalRouteTemplate/);
+  assert.match(page, /applySourceTemplate\(defaultPermissions, ""\)/);
+  assert.match(page, /type RuleGroup/);
+  assert.match(page, /const ruleGroups = useMemo<RuleGroup\[\]>/);
+  assert.match(page, /ruleId\(permission\.market, product, "买"\)/);
+  assert.match(page, /ruleId\(permission\.market, product, "卖"\)/);
+  assert.match(page, /routeTemplate: matched\?\.routeName \?\? ""/);
+  assert.match(page, /normalizeDirection\(row\.direction\) === direction/);
   assert.match(page, /rules\.filter\(\(rule\) => !rule\.routeTemplate\)/);
   assert.match(page, /该品种不能为空/);
   assert.match(page, /setValidationRuleIds\(incomplete\.map/);
-  assert.match(page, /validationRuleIds\.includes\(rule\.id\)/);
-  assert.match(page, /<th>品种<\/th><th>交易方向<\/th><th><em>\*<\/em> 报单排序模板<\/th>/);
+  assert.match(page, /validationRuleIds\.includes\(group\.buy\.id\)/);
+  assert.match(page, /validationRuleIds\.includes\(group\.sell\.id\)/);
+  assert.match(page, /<th>股票市场<\/th><th>品种<\/th><th><em>\*<\/em> 买方向模板<\/th><th><em>\*<\/em> 卖方向模板<\/th>/);
+  assert.match(page, /<option value="">不导入（使用全局模板）<\/option>/);
+  assert.match(page, /tradingMarket: tradingMarketCodeTable\[rule\.market\]\.codeValue/);
+  assert.doesNotMatch(page, /deletedRuleIds|selectedRuleIds|batchDeleteRules/);
   assert.doesNotMatch(page, /ImportDialog|modal-mask|确认导入|匹配状态|映射规则/);
-  assert.doesNotMatch(page, /aria-label=\{`\$\{rule\.market\}\$\{rule\.product\}交易方向`\}/);
   assert.match(css, /\.validation-summary/);
   assert.match(css, /\.validation-row/);
-  assert.doesNotMatch(css, /\.field-error/);
   assert.match(css, /\.template-import-control/);
-  assert.doesNotMatch(css, /\.incomplete-tip/);
-  assert.match(css, /\.batch-delete-button/);
-  assert.match(css, /\.help-tip-wrap:hover \.help-tooltip/);
-  assert.match(css, /\.help-tip-wrap:focus-within \.help-tooltip/);
+  assert.doesNotMatch(css, /\.batch-delete-button|\.selection-cell|\.help-tooltip|\.help-tip/);
 });
