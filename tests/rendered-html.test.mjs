@@ -69,6 +69,33 @@ test("solution two reveals the existing detail form only in custom mode", async 
   assert.match(page, /不导入（使用全局模板）/);
 });
 
+test("server-renders solution three with no default exception rows", async () => {
+  const response = await render("/solution-three");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /仅维护特殊配置/);
+  assert.match(html, /未添加的市场、品种及方向均使用全局模板/);
+  assert.match(html, /暂无特殊配置，全部使用全局模板/);
+  assert.match(html, /请选择报单排序模板/);
+  assert.match(html, />新增</);
+  assert.doesNotMatch(html, /沪深股票全局模板/);
+  assert.doesNotMatch(html, /批量删除/);
+});
+
+test("solution three imports by replacement and validates manual exceptions", async () => {
+  const page = await readFile(new URL("../app/solution-three/page.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /const \[specialRules, setSpecialRules\] = useState<SpecialRule\[]>\(\[\]\)/);
+  assert.match(page, /template\.rows\s*\.filter\(\(row\) => isAllowed\(row, permissions\)\)/);
+  assert.match(page, /setSpecialRules\(next\)/);
+  assert.match(page, /已全量覆盖为/);
+  assert.match(page, /routeTemplate: ""/);
+  assert.match(page, /未配置项使用全局模板/);
+  assert.match(page, /存在重复的特殊配置/);
+  assert.match(page, /模板不能为空/);
+});
+
 test("groups buy and sell templates by permission product and preserves import validation", async () => {
   const [page, css] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),

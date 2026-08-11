@@ -13,6 +13,7 @@ export default defineConfig({
       input: {
         main: "github-pages/index.html",
         solutionTwo: "github-pages/solution-two.html",
+        solutionThree: "github-pages/solution-three.html",
       },
     },
   },

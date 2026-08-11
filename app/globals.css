@@ -45,6 +45,13 @@ tbody tr:last-child td { border-bottom:0; }
 .rule-table th:nth-child(3) { width:28%; }
 .rule-table th:nth-child(4) { width:28%; }
 .rule-table em { color:#f5222d; font-style:normal; }
+.exception-table { min-width:980px; }
+.exception-table th:nth-child(1) { width:19%; }
+.exception-table th:nth-child(2) { width:18%; }
+.exception-table th:nth-child(3) { width:18%; }
+.exception-table th:nth-child(4) { width:35%; }
+.exception-table th:nth-child(5) { width:10%; text-align:center; }
+.exception-table em { color:#f5222d; font-style:normal; }
 .global-template-summary { min-height:58px; display:flex; align-items:center; gap:28px; margin-top:14px; padding:0 14px; border:1px solid #bfc8d0; background:#fff; }
 .global-template-summary span { color:#596775; }
 .global-template-summary strong { font-weight:400; }
