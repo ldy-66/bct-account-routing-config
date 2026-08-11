@@ -9,5 +9,11 @@ export default defineConfig({
   build: {
     outDir: "../dist-pages",
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: "github-pages/index.html",
+        solutionTwo: "github-pages/solution-two.html",
+      },
+    },
   },
 });
