@@ -322,7 +322,7 @@ export default function Home() {
 
       <section className="config-module" aria-labelledby="routing-title">
         <header className="module-header routing-header">
-          <div><h2 id="routing-title">互换交易设置</h2><p>每个“市场 × 品种”固定生成买、卖两行；删除的账户配置自动使用全局模板</p></div>
+          <div><div className="routing-title-row"><h2 id="routing-title">互换交易设置</h2><span className="help-tip-wrap"><button type="button" className="help-tip" aria-label="查看删除明细说明" aria-describedby="deleted-rule-help">?</button><span id="deleted-rule-help" className="help-tooltip" role="tooltip">已删除的明细，将自动配置成全局模板</span></span></div><p>每个“市场 × 品种”固定生成买、卖两行</p></div>
           <div className="routing-controls">
             {validationRules.length > 0 && <span id="routing-validation" className="validation-summary" role="alert">该品种不能为空（{validationRules.length}条）</span>}
             <div className="template-import-control">

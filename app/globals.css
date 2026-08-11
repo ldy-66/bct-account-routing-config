@@ -14,6 +14,13 @@ button,summary { cursor:pointer; }
 .module-header .primary-button,.module-header .secondary-button { margin-left:auto; }
 .routing-header { min-height:58px; }
 .routing-header p { margin:4px 0 0; color:var(--muted); font-size:12px; }
+.routing-title-row { display:flex; align-items:center; gap:6px; }
+.help-tip-wrap { position:relative; display:inline-flex; }
+.help-tip { width:17px; height:17px; display:inline-flex; align-items:center; justify-content:center; padding:0; border:1px solid #8c8c8c; border-radius:50%; color:#666; background:#fff; font-size:12px; line-height:1; }
+.help-tip:hover,.help-tip:focus-visible { color:var(--primary); border-color:var(--primary); outline:0; }
+.help-tooltip { position:absolute; z-index:20; top:24px; left:50%; width:max-content; max-width:320px; padding:7px 10px; color:#fff; background:rgba(0,0,0,.78); border-radius:3px; font-size:12px; line-height:1.5; transform:translateX(-50%); visibility:hidden; opacity:0; pointer-events:none; transition:opacity .15s; }
+.help-tooltip::before { content:""; position:absolute; top:-5px; left:50%; border-width:0 5px 5px; border-style:solid; border-color:transparent transparent rgba(0,0,0,.78); transform:translateX(-50%); }
+.help-tip-wrap:hover .help-tooltip,.help-tip-wrap:focus-within .help-tooltip { visibility:visible; opacity:1; }
 .routing-controls { margin-left:auto; display:flex; align-items:center; gap:12px; }
 .routing-controls .secondary-button { margin-left:0; }
 .template-import-control { display:flex; align-items:center; gap:9px; }

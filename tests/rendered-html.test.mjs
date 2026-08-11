@@ -29,7 +29,8 @@ test("server-renders the two linked account configuration modules", async () => 
   assert.match(html, /模板导入/);
   assert.match(html, /批量删除/);
   assert.doesNotMatch(html, /条未填写/);
-  assert.match(html, /删除的账户配置自动使用全局模板/);
+  assert.match(html, /已删除的配置自动使用全局模板/);
+  assert.match(html, /已删除的明细，将自动配置成全局模板/);
   assert.match(html, /固定生成买、卖两行/);
   assert.doesNotMatch(html, /映射规则/);
   assert.doesNotMatch(html, />交易类型</);
@@ -71,4 +72,6 @@ test("derives fixed buy and sell rows per permission product and maps backend co
   assert.match(css, /\.template-import-control/);
   assert.doesNotMatch(css, /\.incomplete-tip/);
   assert.match(css, /\.batch-delete-button/);
+  assert.match(css, /\.help-tip-wrap:hover \.help-tooltip/);
+  assert.match(css, /\.help-tip-wrap:focus-within \.help-tooltip/);
 });
