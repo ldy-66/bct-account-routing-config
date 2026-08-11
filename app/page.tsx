@@ -36,7 +36,7 @@ type SourceTemplate = {
 };
 
 type TradingMarketCode = {
-  codeValue: "A股" | "港股" | "美股";
+  codeValue: "沪深" | "港股" | "美股";
   templateTags: string[];
 };
 
@@ -46,7 +46,7 @@ const routeTemplates = ["默认模板", "test1", "test2", "买单模板", "卖�
 
 // tradingMarket 码表：页面显示中文市场，接口提交码值；模板侧使用码表标签匹配。
 const tradingMarketCodeTable: Record<Market, TradingMarketCode> = {
-  沪深: { codeValue: "A股", templateTags: ["SH", "SZ", "SHC", "SZC"] },
+  沪深: { codeValue: "沪深", templateTags: ["SH", "SZ", "SHC", "SZC"] },
   港股: { codeValue: "港股", templateTags: ["HZ", "HS", "HK"] },
   美股: { codeValue: "美股", templateTags: ["N", "A", "O"] },
 };
@@ -160,6 +160,8 @@ export default function Home() {
   const [permissions, setPermissions] = useState<Permission[]>(defaultPermissions);
   const [selectedTemplate, setSelectedTemplate] = useState(sourceTemplates[0].name);
   const [rules, setRules] = useState<Rule[]>(() => applySourceTemplate(defaultPermissions, sourceTemplates[0].name));
+  const [deletedRuleIds, setDeletedRuleIds] = useState<string[]>([]);
+  const [selectedRuleIds, setSelectedRuleIds] = useState<string[]>([]);
   const [openProductId, setOpenProductId] = useState<number | null>(null);
   const [toast, setToast] = useState("");
 
@@ -167,13 +169,16 @@ export default function Home() {
     try {
       const saved = localStorage.getItem(storageKey);
       if (!saved) return;
-      const parsed = JSON.parse(saved) as { permissions?: Permission[]; rules?: Rule[]; selectedTemplate?: string };
+      const parsed = JSON.parse(saved) as { permissions?: Permission[]; rules?: Rule[]; selectedTemplate?: string; deletedRuleIds?: string[] };
       const nextPermissions = Array.isArray(parsed.permissions) ? parsed.permissions : defaultPermissions;
       const nextTemplate = sourceTemplates.some((item) => item.name === parsed.selectedTemplate) ? parsed.selectedTemplate as string : sourceTemplates[0].name;
+      const nextDeletedRuleIds = Array.isArray(parsed.deletedRuleIds) ? parsed.deletedRuleIds : [];
+      const nextRules = expandPermissionRules(nextPermissions, Array.isArray(parsed.rules) ? parsed.rules : [], nextTemplate);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPermissions(nextPermissions);
       setSelectedTemplate(nextTemplate);
-      setRules(expandPermissionRules(nextPermissions, Array.isArray(parsed.rules) ? parsed.rules : [], nextTemplate));
+      setDeletedRuleIds(nextDeletedRuleIds);
+      setRules(nextRules.filter((rule) => !nextDeletedRuleIds.includes(rule.id)));
     } catch {
       // 本地示例数据异常时继续使用默认权限与模板。
     }
@@ -191,6 +196,8 @@ export default function Home() {
     () => allMarkets.filter((market) => !permissions.some((permission) => permission.market === market)),
     [permissions],
   );
+  const incompleteCount = useMemo(() => rules.filter((rule) => !rule.routeTemplate).length, [rules]);
+  const allRulesSelected = rules.length > 0 && rules.every((rule) => selectedRuleIds.includes(rule.id));
 
   const flash = (message: string) => {
     setToast(message);
@@ -198,8 +205,13 @@ export default function Home() {
   };
 
   const syncRules = (nextPermissions: Permission[]) => {
+    const nextRules = expandPermissionRules(nextPermissions, rules, selectedTemplate);
+    const validRuleIds = new Set(nextRules.map((rule) => rule.id));
+    const nextDeletedRuleIds = deletedRuleIds.filter((id) => validRuleIds.has(id));
     setPermissions(nextPermissions);
-    setRules((current) => expandPermissionRules(nextPermissions, current, selectedTemplate));
+    setDeletedRuleIds(nextDeletedRuleIds);
+    setRules(nextRules.filter((rule) => !nextDeletedRuleIds.includes(rule.id)));
+    setSelectedRuleIds((current) => current.filter((id) => validRuleIds.has(id) && !nextDeletedRuleIds.includes(id)));
   };
 
   const updateMarket = (id: number, market: Market) => {
@@ -224,10 +236,26 @@ export default function Home() {
 
   const updateRule = (id: string, patch: Partial<Rule>) => setRules((current) => current.map((rule) => rule.id === id ? { ...rule, ...patch } : rule));
 
+  const toggleRule = (id: string, checked: boolean) => {
+    setSelectedRuleIds((current) => checked ? [...new Set([...current, id])] : current.filter((item) => item !== id));
+  };
+
+  const toggleAllRules = (checked: boolean) => setSelectedRuleIds(checked ? rules.map((rule) => rule.id) : []);
+
+  const batchDeleteRules = () => {
+    if (!selectedRuleIds.length) return;
+    const selected = new Set(selectedRuleIds);
+    setRules((current) => current.filter((rule) => !selected.has(rule.id)));
+    setDeletedRuleIds((current) => [...new Set([...current, ...selectedRuleIds])]);
+    setSelectedRuleIds([]);
+    flash(`已删除 ${selectedRuleIds.length} 条账户配置，系统将自动使用全局模板`);
+  };
+
   const changeSourceTemplate = (templateName: string) => {
-    const next = applySourceTemplate(permissions, templateName);
+    const next = applySourceTemplate(permissions, templateName).filter((rule) => !deletedRuleIds.includes(rule.id));
     setSelectedTemplate(templateName);
     setRules(next);
+    setSelectedRuleIds((current) => current.filter((id) => next.some((rule) => rule.id === id)));
     const emptyCount = next.filter((rule) => !rule.routeTemplate).length;
     flash(emptyCount ? `已匹配模板，${emptyCount} 条配置需手工补充` : `已按“${templateName}”完成全部匹配`);
   };
@@ -254,7 +282,7 @@ export default function Home() {
         direction: rule.direction,
       })),
     };
-    localStorage.setItem(storageKey, JSON.stringify({ permissions, rules, selectedTemplate, backendPayload }));
+    localStorage.setItem(storageKey, JSON.stringify({ permissions, rules, deletedRuleIds, selectedTemplate, backendPayload }));
     flash(`已按 tradingMarket 码表转换并保存 ${rules.length} 条配置`);
   };
 
@@ -285,27 +313,32 @@ export default function Home() {
 
       <section className="config-module" aria-labelledby="routing-title">
         <header className="module-header routing-header">
-          <div><h2 id="routing-title">报单排序配置</h2><p>每个“市场 × 品种”固定生成买、卖两行；页面显示名称，保存时按 tradingMarket 码表转换</p></div>
-          <div className="template-import-control">
-            <label htmlFor="source-template">模板导入</label>
-            <select id="source-template" value={selectedTemplate} onChange={(event) => changeSourceTemplate(event.target.value)}>{sourceTemplates.map((item) => <option key={item.name} value={item.name}>{item.name}（{item.remark}）</option>)}</select>
+          <div><h2 id="routing-title">互换交易设置</h2><p>每个“市场 × 品种”固定生成买、卖两行；删除的账户配置自动使用全局模板</p></div>
+          <div className="routing-controls">
+            {incompleteCount > 0 && <span className="incomplete-tip" role="status">{incompleteCount} 条未填写</span>}
+            <div className="template-import-control">
+              <label htmlFor="source-template">模板导入</label>
+              <select id="source-template" value={selectedTemplate} onChange={(event) => changeSourceTemplate(event.target.value)}>{sourceTemplates.map((item) => <option key={item.name} value={item.name}>{item.name}（{item.remark}）</option>)}</select>
+            </div>
+            <button className="secondary-button batch-delete-button" onClick={batchDeleteRules} disabled={!selectedRuleIds.length}>批量删除</button>
           </div>
         </header>
         <div className="table-wrap">
           <table className="rule-table">
-            <thead><tr><th>股票市场</th><th>品种</th><th><em>*</em> 报单排序模板</th><th>交易方向</th></tr></thead>
+            <thead><tr><th className="selection-cell"><input type="checkbox" aria-label="选择全部互换交易设置" checked={allRulesSelected} onChange={(event) => toggleAllRules(event.target.checked)} /></th><th>股票市场</th><th>品种</th><th><em>*</em> 报单排序模板</th><th>交易方向</th></tr></thead>
             <tbody>
               {rules.map((rule) => <tr key={rule.id} className={!rule.routeTemplate ? "incomplete-row" : undefined}>
+                <td className="selection-cell"><input type="checkbox" aria-label={`选择${rule.market}${rule.product}${rule.direction}`} checked={selectedRuleIds.includes(rule.id)} onChange={(event) => toggleRule(rule.id, event.target.checked)} /></td>
                 <td><span className="readonly-value">{rule.market}</span></td>
                 <td><span className="readonly-value">{rule.product}</span></td>
                 <td><select aria-label={`${rule.market}${rule.product}${rule.direction}报单排序模板`} value={rule.routeTemplate} onChange={(event) => updateRule(rule.id, { routeTemplate: event.target.value })}><option value="">请选择</option>{routeTemplates.map((template) => <option key={template} value={template}>{template}</option>)}</select></td>
                 <td><span className="readonly-value">{rule.direction}</span></td>
               </tr>)}
-              {!rules.length && <tr><td colSpan={4} className="empty-cell">请先在上方配置市场和品种权限</td></tr>}
+              {!rules.length && <tr><td colSpan={5} className="empty-cell">暂无账户级配置，系统将使用全局模板</td></tr>}
             </tbody>
           </table>
         </div>
-        <p className="count-line">共 {rules.length} 条配置，由上方权限自动生成</p>
+        <p className="count-line">共 {rules.length} 条账户配置，已删除的配置自动使用全局模板</p>
       </section>
 
       <footer className="page-footer"><button className="save-button" onClick={save}>保存</button></footer>

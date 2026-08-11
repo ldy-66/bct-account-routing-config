@@ -22,11 +22,14 @@ test("server-renders the two linked account configuration modules", async () => 
   const html = await response.text();
   assert.match(html, /<title>BCT 开户权限与报单排序配置<\/title>/i);
   assert.match(html, />互换交易权限</);
-  assert.match(html, />报单排序配置</);
+  assert.match(html, />互换交易设置</);
   assert.match(html, />沪深</);
   assert.doesNotMatch(html, /沪深（上交所、深交所）/);
   assert.doesNotMatch(html, /港股（香港交易所、深港通、沪股通）/);
   assert.match(html, /模板导入/);
+  assert.match(html, /批量删除/);
+  assert.match(html, /条未填写/);
+  assert.match(html, /删除的账户配置自动使用全局模板/);
   assert.match(html, /固定生成买、卖两行/);
   assert.doesNotMatch(html, /映射规则/);
   assert.doesNotMatch(html, />交易类型</);
@@ -39,7 +42,7 @@ test("derives fixed buy and sell rows per permission product and maps backend co
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  assert.match(page, /沪深:\s*\{\s*codeValue:\s*"A股",\s*templateTags:\s*\["SH",\s*"SZ",\s*"SHC",\s*"SZC"\]/);
+  assert.match(page, /沪深:\s*\{\s*codeValue:\s*"沪深",\s*templateTags:\s*\["SH",\s*"SZ",\s*"SHC",\s*"SZC"\]/);
   assert.match(page, /港股:\s*\{\s*codeValue:\s*"港股",\s*templateTags:\s*\["HZ",\s*"HS",\s*"HK"\]/);
   assert.match(page, /美股:\s*\{\s*codeValue:\s*"美股",\s*templateTags:\s*\["N",\s*"A",\s*"O"\]/);
   assert.match(page, /function expandPermissionRules/);
@@ -51,8 +54,15 @@ test("derives fixed buy and sell rows per permission product and maps backend co
   assert.match(page, /<span className="readonly-value">\{rule\.direction\}<\/span>/);
   assert.match(page, /<option value="">请选择<\/option>/);
   assert.match(page, /tradingMarket:\s*tradingMarketCodeTable\[rule\.market\]\.codeValue/);
+  assert.match(page, /const \[deletedRuleIds, setDeletedRuleIds\]/);
+  assert.match(page, /const \[selectedRuleIds, setSelectedRuleIds\]/);
+  assert.match(page, /function batchDeleteRules|const batchDeleteRules/);
+  assert.match(page, /系统将自动使用全局模板/);
+  assert.match(page, /rules\.filter\(\(rule\) => !rule\.routeTemplate\)/);
   assert.doesNotMatch(page, /ImportDialog|modal-mask|确认导入|匹配状态|映射规则/);
   assert.doesNotMatch(page, /aria-label=\{`\$\{rule\.market\}\$\{rule\.product\}交易方向`\}/);
   assert.match(css, /\.incomplete-row/);
   assert.match(css, /\.template-import-control/);
+  assert.match(css, /\.incomplete-tip/);
+  assert.match(css, /\.batch-delete-button/);
 });
