@@ -220,22 +220,19 @@ export default function SolutionTwo() {
             </div>}
           </div>
         </header>
-        <div className="table-wrap">
-          <table className={customMode ? "rule-table" : "global-rule-table"}>
-            {customMode ? <>
+        {customMode ? <>
+          <div className="table-wrap">
+            <table className="rule-table">
               <thead><tr><th>股票市场</th><th>品种</th><th><em>*</em> 买方向模板</th><th><em>*</em> 卖方向模板</th></tr></thead>
               <tbody>{ruleGroups.map((group) => <tr key={group.id} className={validationRuleIds.includes(group.buy.id) || validationRuleIds.includes(group.sell.id) ? "validation-row" : undefined}>
                 <td>{group.market}</td><td>{group.product}</td>
                 <td><select aria-label={`${group.market}${group.product}买方向模板`} value={group.buy.routeTemplate} onChange={(event) => updateRule(group.buy.id, event.target.value)}><option value="">请选择</option>{routeTemplates.map((template) => <option key={template}>{template}</option>)}</select></td>
                 <td><select aria-label={`${group.market}${group.product}卖方向模板`} value={group.sell.routeTemplate} onChange={(event) => updateRule(group.sell.id, event.target.value)}><option value="">请选择</option>{routeTemplates.map((template) => <option key={template}>{template}</option>)}</select></td>
               </tr>)}</tbody>
-            </> : <>
-              <thead><tr><th>股票市场</th><th>品种</th><th>模板配置</th></tr></thead>
-              <tbody>{ruleGroups.map((group) => <tr key={group.id}><td>{group.market}</td><td>{group.product}</td><td><span className="global-template-value">全局模板</span></td></tr>)}</tbody>
-            </>}
-          </table>
-        </div>
-        <p className="count-line">共 {ruleGroups.length} 个市场品种组合，{customMode ? "当前使用自定义配置" : "当前均使用全局模板"}</p>
+            </table>
+          </div>
+          <p className="count-line">共 {ruleGroups.length} 个市场品种组合，当前使用自定义配置</p>
+        </> : <div className="global-template-summary" role="status"><span>报单排序模板</span><strong>全局模板</strong></div>}
       </section>
 
       <footer className="page-footer"><button className="save-button" onClick={save}>保存</button></footer>

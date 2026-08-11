@@ -48,8 +48,10 @@ test("server-renders solution two in global-template mode without changing solut
   assert.match(html, /默认沿用全局模板/);
   assert.match(html, />全局模板</);
   assert.match(html, />自定义模板</);
-  assert.match(html, /当前均使用全局模板/);
+  assert.match(html, /报单排序模板/);
   assert.doesNotMatch(html, /批量删除/);
+  assert.doesNotMatch(html, /市场品种组合/);
+  assert.doesNotMatch(html, /模板配置<\/th>/);
   assert.doesNotMatch(html, /买方向模板/);
   assert.doesNotMatch(html, /卖方向模板/);
 });
