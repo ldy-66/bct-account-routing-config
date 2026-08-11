@@ -92,6 +92,7 @@ test("solution three imports by replacement and validates manual exceptions", as
   assert.match(page, /已全量覆盖为/);
   assert.match(page, /routeTemplate: ""/);
   assert.match(page, /未配置项使用全局模板/);
+  assert.match(page, /<button className="add-special-row" onClick=\{addSpecialRule\}>新增一行<\/button>/);
   assert.match(page, /存在重复的特殊配置/);
   assert.match(page, /模板不能为空/);
 });

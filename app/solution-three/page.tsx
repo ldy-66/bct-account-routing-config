@@ -202,7 +202,6 @@ export default function SolutionThree() {
               <label htmlFor="source-template-three">模板导入</label>
               <select id="source-template-three" value={selectedTemplate} onChange={(event) => importTemplate(event.target.value)}><option value="">请选择报单排序模板</option>{sourceTemplates.map((item) => <option key={item.name} value={item.name}>{item.name}（{item.remark}）</option>)}</select>
             </div>
-            <button className="primary-button" onClick={addSpecialRule}>新增</button>
           </div>
         </header>
         <div className="table-wrap">
@@ -224,6 +223,7 @@ export default function SolutionThree() {
             </tbody>
           </table>
         </div>
+        <button className="add-special-row" onClick={addSpecialRule}>新增一行</button>
         <p className="count-line">共 {specialRules.length} 条特殊配置，未配置项使用全局模板</p>
       </section>
 
