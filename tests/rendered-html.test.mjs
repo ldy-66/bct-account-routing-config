@@ -100,6 +100,8 @@ test("solution three imports by replacement and validates manual exceptions", as
   assert.match(page, /const productOptions = \(permission\?\.products \?\? \[\]\)\.filter/);
   assert.match(page, /const directionOptions = allDirections\.filter/);
   assert.match(page, /disabled=\{!canAddSpecialRule\}/);
+  assert.match(page, /rule\.id === id \? \{ \.\.\.rule, \.\.\.patch \} : rule/);
+  assert.doesNotMatch(page, /if \(patch\.market\)/);
 });
 
 test("groups buy and sell templates by permission product and preserves import validation", async () => {

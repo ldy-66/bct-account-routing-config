@@ -144,15 +144,7 @@ export default function SolutionThree() {
   };
 
   const updateSpecialRule = (id: string, patch: Partial<SpecialRule>) => {
-    setSpecialRules((current) => current.map((rule) => {
-      if (rule.id !== id) return rule;
-      const next = { ...rule, ...patch };
-      if (patch.market) {
-        const permission = permissions.find((item) => item.market === patch.market);
-        next.product = permission?.products[0] ?? rule.product;
-      }
-      return next;
-    }));
+    setSpecialRules((current) => current.map((rule) => rule.id === id ? { ...rule, ...patch } : rule));
     setValidationIds((current) => current.filter((item) => item !== id));
     setDuplicateIds([]);
   };
