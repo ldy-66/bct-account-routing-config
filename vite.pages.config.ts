@@ -12,6 +12,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: "github-pages/index.html",
+        solutionOne: "github-pages/solution-one.html",
         solutionTwo: "github-pages/solution-two.html",
         solutionThree: "github-pages/solution-three.html",
       },
