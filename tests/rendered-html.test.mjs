@@ -92,9 +92,14 @@ test("solution three imports by replacement and validates manual exceptions", as
   assert.match(page, /已全量覆盖为/);
   assert.match(page, /routeTemplate: ""/);
   assert.match(page, /未配置项使用全局模板/);
-  assert.match(page, /<button className="add-special-row" onClick=\{addSpecialRule\}>新增一行<\/button>/);
+  assert.match(page, /<button className="add-special-row" onClick=\{addSpecialRule\}[^>]*>新增一行<\/button>/);
   assert.match(page, /存在重复的特殊配置/);
   assert.match(page, /模板不能为空/);
+  assert.match(page, /const usedByOtherRows = new Set\(specialRules\.filter\(\(item\) => item\.id !== rule\.id\)\.map\(combinationKey\)\)/);
+  assert.match(page, /const marketOptions = permissions\.filter/);
+  assert.match(page, /const productOptions = \(permission\?\.products \?\? \[\]\)\.filter/);
+  assert.match(page, /const directionOptions = allDirections\.filter/);
+  assert.match(page, /disabled=\{!canAddSpecialRule\}/);
 });
 
 test("groups buy and sell templates by permission product and preserves import validation", async () => {

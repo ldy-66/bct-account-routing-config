@@ -118,6 +118,18 @@ export default function SolutionThree() {
     () => permissions.flatMap((permission) => permission.products.flatMap((product) => allDirections.map((direction) => ({ market: permission.market, product, direction })))),
     [permissions],
   );
+  const usedCombinationKeys = useMemo(() => new Set(specialRules.map(combinationKey)), [specialRules]);
+  const canAddSpecialRule = availableCombinations.some((item) => !usedCombinationKeys.has(combinationKey(item)));
+
+  const firstAvailableCombination = (id: string, constraint: Partial<Pick<SpecialRule, "market" | "product" | "direction">>) => {
+    const usedByOtherRows = new Set(specialRules.filter((rule) => rule.id !== id).map(combinationKey));
+    return availableCombinations.find((item) =>
+      (!constraint.market || item.market === constraint.market)
+      && (!constraint.product || item.product === constraint.product)
+      && (!constraint.direction || item.direction === constraint.direction)
+      && !usedByOtherRows.has(combinationKey(item)),
+    );
+  };
 
   const addSpecialRule = () => {
     const used = new Set(specialRules.map(combinationKey));
@@ -143,6 +155,16 @@ export default function SolutionThree() {
     }));
     setValidationIds((current) => current.filter((item) => item !== id));
     setDuplicateIds([]);
+  };
+
+  const updateRuleMarket = (id: string, market: Market) => {
+    const next = firstAvailableCombination(id, { market });
+    if (next) updateSpecialRule(id, next);
+  };
+
+  const updateRuleProduct = (id: string, market: Market, product: Product) => {
+    const next = firstAvailableCombination(id, { market, product });
+    if (next) updateSpecialRule(id, next);
   };
 
   const importTemplate = (templateName: string) => {
@@ -210,11 +232,15 @@ export default function SolutionThree() {
             <tbody>
               {specialRules.map((rule, index) => {
                 const permission = permissions.find((item) => item.market === rule.market);
+                const usedByOtherRows = new Set(specialRules.filter((item) => item.id !== rule.id).map(combinationKey));
+                const marketOptions = permissions.filter((item) => availableCombinations.some((candidate) => candidate.market === item.market && !usedByOtherRows.has(combinationKey(candidate))));
+                const productOptions = (permission?.products ?? []).filter((product) => allDirections.some((direction) => !usedByOtherRows.has(combinationKey({ market: rule.market, product, direction }))));
+                const directionOptions = allDirections.filter((direction) => !usedByOtherRows.has(combinationKey({ market: rule.market, product: rule.product, direction })));
                 const invalid = validationIds.includes(rule.id) || duplicateIds.includes(rule.id);
                 return <tr key={rule.id} className={invalid ? "validation-row" : undefined}>
-                  <td><select aria-label={`第 ${index + 1} 条特殊配置市场`} value={rule.market} onChange={(event) => updateSpecialRule(rule.id, { market: event.target.value as Market })}>{permissions.map((item) => <option key={item.market}>{item.market}</option>)}</select></td>
-                  <td><select aria-label={`第 ${index + 1} 条特殊配置品种`} value={rule.product} onChange={(event) => updateSpecialRule(rule.id, { product: event.target.value as Product })}>{permission?.products.map((product) => <option key={product}>{product}</option>)}</select></td>
-                  <td><select aria-label={`第 ${index + 1} 条特殊配置交易方向`} value={rule.direction} onChange={(event) => updateSpecialRule(rule.id, { direction: event.target.value as Direction })}>{allDirections.map((direction) => <option key={direction}>{direction}</option>)}</select></td>
+                  <td><select aria-label={`第 ${index + 1} 条特殊配置市场`} value={rule.market} onChange={(event) => updateRuleMarket(rule.id, event.target.value as Market)}>{marketOptions.map((item) => <option key={item.market}>{item.market}</option>)}</select></td>
+                  <td><select aria-label={`第 ${index + 1} 条特殊配置品种`} value={rule.product} onChange={(event) => updateRuleProduct(rule.id, rule.market, event.target.value as Product)}>{productOptions.map((product) => <option key={product}>{product}</option>)}</select></td>
+                  <td><select aria-label={`第 ${index + 1} 条特殊配置交易方向`} value={rule.direction} onChange={(event) => updateSpecialRule(rule.id, { direction: event.target.value as Direction })}>{directionOptions.map((direction) => <option key={direction}>{direction}</option>)}</select></td>
                   <td><select aria-label={`第 ${index + 1} 条特殊配置模板`} aria-invalid={invalid} value={rule.routeTemplate} onChange={(event) => updateSpecialRule(rule.id, { routeTemplate: event.target.value })}><option value="">请选择</option>{routeTemplates.map((template) => <option key={template}>{template}</option>)}</select></td>
                   <td className="actions"><button onClick={() => setSpecialRules((current) => current.filter((item) => item.id !== rule.id))}>删除</button></td>
                 </tr>;
@@ -223,7 +249,7 @@ export default function SolutionThree() {
             </tbody>
           </table>
         </div>
-        <button className="add-special-row" onClick={addSpecialRule}>新增一行</button>
+        <button className="add-special-row" onClick={addSpecialRule} disabled={!canAddSpecialRule} title={canAddSpecialRule ? undefined : "当前权限下已无可新增的特殊配置"}>新增一行</button>
         <p className="count-line">共 {specialRules.length} 条特殊配置，未配置项使用全局模板</p>
       </section>
 
