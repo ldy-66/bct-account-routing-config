@@ -52,6 +52,7 @@ const allMarkets: Market[] = ["沪深", "港股", "美股"];
 const allProducts: Product[] = ["股票", "ETF", "可转债"];
 const globalRouteTemplate = "全局模板";
 const routeTemplates = [globalRouteTemplate, "默认模板", "test1", "test2", "买单模板", "卖单模板"];
+const restrictedInvestmentTemplates = ["默认不可投资范围模板", "港股不可投资范围模板"];
 
 // tradingMarket 码表：页面显示中文市场，接口提交码值；模板侧使用码表标签匹配。
 const tradingMarketCodeTable: Record<Market, TradingMarketCode> = {
@@ -141,7 +142,7 @@ function ruleFromTemplate(market: Market, product: Product, direction: Direction
     id: ruleId(market, product, direction),
     market,
     product,
-    routeTemplate: matched?.routeName ?? "",
+    routeTemplate: matched?.routeName ?? globalRouteTemplate,
     direction,
   };
 }
@@ -177,6 +178,7 @@ function applySourceTemplate(permissions: Permission[], templateName: string) {
 export default function Home() {
   const [permissions, setPermissions] = useState<Permission[]>(defaultPermissions);
   const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [restrictedInvestmentTemplate, setRestrictedInvestmentTemplate] = useState("");
   const [rules, setRules] = useState<Rule[]>(() => applySourceTemplate(defaultPermissions, ""));
   const [validationRuleIds, setValidationRuleIds] = useState<string[]>([]);
   const [openProductId, setOpenProductId] = useState<number | null>(null);
@@ -186,13 +188,14 @@ export default function Home() {
     try {
       const saved = localStorage.getItem(storageKey);
       if (!saved) return;
-      const parsed = JSON.parse(saved) as { permissions?: Permission[]; rules?: Rule[]; selectedTemplate?: string };
+      const parsed = JSON.parse(saved) as { permissions?: Permission[]; rules?: Rule[]; selectedTemplate?: string; restrictedInvestmentTemplate?: string };
       const nextPermissions = Array.isArray(parsed.permissions) ? parsed.permissions : defaultPermissions;
       const nextTemplate = sourceTemplates.some((item) => item.name === parsed.selectedTemplate) ? parsed.selectedTemplate as string : "";
       const nextRules = expandPermissionRules(nextPermissions, Array.isArray(parsed.rules) ? parsed.rules : [], nextTemplate);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPermissions(nextPermissions);
       setSelectedTemplate(nextTemplate);
+      setRestrictedInvestmentTemplate(parsed.restrictedInvestmentTemplate ?? "");
       setRules(nextRules);
     } catch {
       // 本地示例数据异常时继续使用默认权限与模板。
@@ -267,9 +270,8 @@ export default function Home() {
     setSelectedTemplate(templateName);
     setRules(next);
     setValidationRuleIds([]);
-    const emptyCount = next.filter((rule) => !rule.routeTemplate).length;
     if (!templateName) flash("已恢复为全局模板");
-    else flash(emptyCount ? `已匹配模板，${emptyCount} 个方向需手工补充` : `已按“${templateName}”完成全部匹配`);
+    else flash(`已导入“${templateName}”，未匹配项继续使用全局模板`);
   };
 
   const save = () => {
@@ -282,6 +284,7 @@ export default function Home() {
     setValidationRuleIds([]);
 
     const backendPayload = {
+      restrictedInvestmentTemplate,
       tradePermissions: permissions.map((permission) => ({
         tradingMarket: tradingMarketCodeTable[permission.market].codeValue,
         tradingMarketTags: tradingMarketCodeTable[permission.market].templateTags,
@@ -296,7 +299,7 @@ export default function Home() {
         direction: rule.direction,
       })),
     };
-    localStorage.setItem(storageKey, JSON.stringify({ permissions, rules, selectedTemplate, backendPayload }));
+    localStorage.setItem(storageKey, JSON.stringify({ permissions, rules, selectedTemplate, restrictedInvestmentTemplate, backendPayload }));
     flash(`已按 tradingMarket 码表转换并保存 ${rules.length} 条配置`);
   };
 
@@ -327,9 +330,13 @@ export default function Home() {
 
       <section className="config-module" aria-labelledby="routing-title">
         <header className="module-header routing-header">
-          <div><h2 id="routing-title">互换交易设置</h2><p>每个“市场 × 品种”合并为一行，买、卖方向分别配置模板</p></div>
+          <div><h2 id="routing-title">智能路由配置</h2><p>每个“市场 × 品种”合并为一行，买、卖方向分别配置模板</p></div>
           <div className="routing-controls">
             {validationRules.length > 0 && <span id="routing-validation" className="validation-summary" role="alert">该品种不能为空（{validationRules.length}条）</span>}
+            <div className="template-import-control">
+              <label htmlFor="restricted-investment-template">不可投资范围模板</label>
+              <select id="restricted-investment-template" value={restrictedInvestmentTemplate} onChange={(event) => setRestrictedInvestmentTemplate(event.target.value)}><option value="">请选择</option>{restrictedInvestmentTemplates.map((template) => <option key={template} value={template}>{template}</option>)}</select>
+            </div>
             <div className="template-import-control">
               <label htmlFor="source-template">模板导入</label>
               <select id="source-template" value={selectedTemplate} onChange={(event) => changeSourceTemplate(event.target.value)}><option value="">不导入（使用全局模板）</option>{sourceTemplates.map((item) => <option key={item.name} value={item.name}>{item.name}（{item.remark}）</option>)}</select>

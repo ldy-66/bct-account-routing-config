@@ -22,9 +22,10 @@ test("server-renders the linked account configuration modules with compact routi
   const html = await response.text();
   assert.match(html, /<title>BCT 开户权限与报单排序配置<\/title>/i);
   assert.match(html, />互换交易权限</);
-  assert.match(html, />互换交易设置</);
+  assert.match(html, />智能路由配置</);
   assert.match(html, />沪深</);
   assert.match(html, /模板导入/);
+  assert.match(html, /不可投资范围模板/);
   assert.match(html, /不导入（使用全局模板）/);
   assert.match(html, /买方向模板/);
   assert.match(html, /卖方向模板/);
@@ -111,13 +112,15 @@ test("groups buy and sell templates by permission product and preserves import v
   ]);
 
   assert.match(page, /const globalRouteTemplate = "全局模板"/);
+  assert.match(page, /const restrictedInvestmentTemplates = \["默认不可投资范围模板", "港股不可投资范围模板"\]/);
+  assert.match(page, /restrictedInvestmentTemplate,/);
   assert.match(page, /const routeTemplates = \[globalRouteTemplate/);
   assert.match(page, /applySourceTemplate\(defaultPermissions, ""\)/);
   assert.match(page, /type RuleGroup/);
   assert.match(page, /const ruleGroups = useMemo<RuleGroup\[\]>/);
   assert.match(page, /ruleId\(permission\.market, product, "买"\)/);
   assert.match(page, /ruleId\(permission\.market, product, "卖"\)/);
-  assert.match(page, /routeTemplate: matched\?\.routeName \?\? ""/);
+  assert.match(page, /routeTemplate: matched\?\.routeName \?\? globalRouteTemplate/);
   assert.match(page, /normalizeDirection\(row\.direction\) === direction/);
   assert.match(page, /rules\.filter\(\(rule\) => !rule\.routeTemplate\)/);
   assert.match(page, /该品种不能为空/);
