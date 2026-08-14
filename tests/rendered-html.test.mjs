@@ -22,13 +22,13 @@ test("server-renders the linked account configuration modules with compact routi
   const html = await response.text();
   assert.match(html, /<title>BCT 开户权限与报单排序配置<\/title>/i);
   assert.match(html, />互换交易权限</);
-  assert.match(html, />智能路由配置</);
   assert.match(html, />沪深</);
   assert.match(html, /模板导入/);
   assert.match(html, /不可投资范围模板/);
   assert.match(html, /class="routing-base-fields"/);
-  assert.match(html, /class="config-module restricted-investment-module"/);
-  assert.match(html, />不可投资范围设置</);
+  assert.doesNotMatch(html, /restricted-investment-module/);
+  assert.match(html, />互换交易设置</);
+  assert.match(html, />智能路由配置明细</);
   assert.match(html, /不导入（使用全局模板）/);
   assert.match(html, /买方向模板/);
   assert.match(html, /卖方向模板/);

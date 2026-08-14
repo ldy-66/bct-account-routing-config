@@ -328,19 +328,16 @@ export default function Home() {
         <p className="count-line">共 {permissions.length} 项市场权限</p>
       </section>
 
-      <section className="config-module restricted-investment-module" aria-labelledby="restricted-investment-title">
+      <section className="config-module" aria-labelledby="routing-title">
         <header className="module-header">
-          <h2 id="restricted-investment-title">不可投资范围设置</h2>
+          <h2 id="routing-title">互换交易设置</h2>
         </header>
         <div className="routing-base-fields">
           <label htmlFor="restricted-investment-template">不可投资范围模板</label>
           <select id="restricted-investment-template" value={restrictedInvestmentTemplate} onChange={(event) => setRestrictedInvestmentTemplate(event.target.value)}><option value="">请选择</option>{restrictedInvestmentTemplates.map((template) => <option key={template} value={template}>{template}</option>)}</select>
         </div>
-      </section>
-
-      <section className="config-module" aria-labelledby="routing-title">
-        <header className="module-header routing-header">
-          <div><h2 id="routing-title">智能路由配置</h2><p>每个“市场 × 品种”合并为一行，买、卖方向分别配置模板</p></div>
+        <div className="routing-header routing-detail-header">
+          <div><h3>智能路由配置明细</h3><p>每个“市场 × 品种”合并为一行，买、卖方向分别配置模板</p></div>
           <div className="routing-controls">
             {validationRules.length > 0 && <span id="routing-validation" className="validation-summary" role="alert">该品种不能为空（{validationRules.length}条）</span>}
             <div className="template-import-control">
@@ -348,7 +345,7 @@ export default function Home() {
               <select id="source-template" value={selectedTemplate} onChange={(event) => changeSourceTemplate(event.target.value)}><option value="">不导入（使用全局模板）</option>{sourceTemplates.map((item) => <option key={item.name} value={item.name}>{item.name}（{item.remark}）</option>)}</select>
             </div>
           </div>
-        </header>
+        </div>
         <div className="table-wrap">
           <table className="rule-table">
             <thead><tr><th>股票市场</th><th>品种</th><th><em>*</em> 买方向模板</th><th><em>*</em> 卖方向模板</th></tr></thead>

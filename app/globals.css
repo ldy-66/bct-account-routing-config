@@ -14,13 +14,13 @@ button,summary { cursor:pointer; }
 .module-header .primary-button,.module-header .secondary-button { margin-left:auto; }
 .routing-header { min-height:58px; flex-wrap:wrap; gap:10px; padding:8px 0; }
 .routing-header p { margin:4px 0 0; color:var(--muted); font-size:12px; }
+.routing-detail-header { display:flex; align-items:center; margin-top:8px; border-top:1px solid var(--light-border); border-bottom:1px solid var(--light-border); }
+.routing-detail-header h3 { margin:0; font-size:14px; font-weight:600; }
 .routing-controls { min-width:0; margin-left:auto; display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:10px; }
 .template-import-control { display:flex; align-items:center; gap:9px; }
 .template-import-control label { white-space:nowrap; }
 .template-import-control select { width:220px; height:32px; padding:0 28px 0 9px; border:1px solid #cfcfcf; background:#fff; }
 .routing-base-fields { display:flex; align-items:center; gap:14px; min-height:56px; padding:12px 0 4px; }
-.restricted-investment-module { margin-bottom:26px; }
-.restricted-investment-module .routing-base-fields { padding-bottom:0; }
 .routing-base-fields label { width:126px; white-space:nowrap; }
 .routing-base-fields select { width:260px; height:32px; padding:0 28px 0 9px; border:1px solid #cfcfcf; color:var(--text); background:#fff; }
 .routing-base-fields select:focus { border-color:var(--primary); outline:0; box-shadow:0 0 0 2px rgba(24,144,255,.1); }
