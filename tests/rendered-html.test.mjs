@@ -26,6 +26,7 @@ test("server-renders the linked account configuration modules with compact routi
   assert.match(html, />沪深</);
   assert.match(html, /模板导入/);
   assert.match(html, /不可投资范围模板/);
+  assert.match(html, /class="routing-base-fields"/);
   assert.match(html, /不导入（使用全局模板）/);
   assert.match(html, /买方向模板/);
   assert.match(html, /卖方向模板/);

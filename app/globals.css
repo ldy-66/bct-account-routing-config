@@ -18,6 +18,10 @@ button,summary { cursor:pointer; }
 .template-import-control { display:flex; align-items:center; gap:9px; }
 .template-import-control label { white-space:nowrap; }
 .template-import-control select { width:220px; height:32px; padding:0 28px 0 9px; border:1px solid #cfcfcf; background:#fff; }
+.routing-base-fields { display:flex; align-items:center; gap:14px; min-height:56px; padding:12px 0 4px; }
+.routing-base-fields label { width:126px; white-space:nowrap; }
+.routing-base-fields select { width:260px; height:32px; padding:0 28px 0 9px; border:1px solid #cfcfcf; color:var(--text); background:#fff; }
+.routing-base-fields select:focus { border-color:var(--primary); outline:0; box-shadow:0 0 0 2px rgba(24,144,255,.1); }
 .template-mode-switch { display:inline-flex; height:32px; border:1px solid #cfcfcf; background:#fff; }
 .template-mode-switch button { min-width:88px; padding:0 14px; border:0; border-right:1px solid #cfcfcf; color:#555; background:#fff; }
 .template-mode-switch button:last-child { border-right:0; }
@@ -98,6 +102,9 @@ td select:disabled { color:#aaa; background:#f5f5f5; }
   .template-mode-switch button { flex:1; }
   .template-import-control { min-width:280px; flex:1; }
   .template-import-control select { min-width:0; flex:1; }
+  .routing-base-fields { align-items:flex-start; flex-direction:column; gap:7px; }
+  .routing-base-fields label { width:auto; }
+  .routing-base-fields select { width:100%; }
 }
 
 @page { size:A4 portrait; margin:0; }

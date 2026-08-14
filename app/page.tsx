@@ -334,15 +334,15 @@ export default function Home() {
           <div className="routing-controls">
             {validationRules.length > 0 && <span id="routing-validation" className="validation-summary" role="alert">该品种不能为空（{validationRules.length}条）</span>}
             <div className="template-import-control">
-              <label htmlFor="restricted-investment-template">不可投资范围模板</label>
-              <select id="restricted-investment-template" value={restrictedInvestmentTemplate} onChange={(event) => setRestrictedInvestmentTemplate(event.target.value)}><option value="">请选择</option>{restrictedInvestmentTemplates.map((template) => <option key={template} value={template}>{template}</option>)}</select>
-            </div>
-            <div className="template-import-control">
               <label htmlFor="source-template">模板导入</label>
               <select id="source-template" value={selectedTemplate} onChange={(event) => changeSourceTemplate(event.target.value)}><option value="">不导入（使用全局模板）</option>{sourceTemplates.map((item) => <option key={item.name} value={item.name}>{item.name}（{item.remark}）</option>)}</select>
             </div>
           </div>
         </header>
+        <div className="routing-base-fields">
+          <label htmlFor="restricted-investment-template">不可投资范围模板</label>
+          <select id="restricted-investment-template" value={restrictedInvestmentTemplate} onChange={(event) => setRestrictedInvestmentTemplate(event.target.value)}><option value="">请选择</option>{restrictedInvestmentTemplates.map((template) => <option key={template} value={template}>{template}</option>)}</select>
+        </div>
         <div className="table-wrap">
           <table className="rule-table">
             <thead><tr><th>股票市场</th><th>品种</th><th><em>*</em> 买方向模板</th><th><em>*</em> 卖方向模板</th></tr></thead>
