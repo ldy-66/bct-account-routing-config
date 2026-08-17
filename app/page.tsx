@@ -337,7 +337,7 @@ export default function Home() {
           <select id="restricted-investment-template" value={restrictedInvestmentTemplate} onChange={(event) => setRestrictedInvestmentTemplate(event.target.value)}><option value="">请选择</option>{restrictedInvestmentTemplates.map((template) => <option key={template} value={template}>{template}</option>)}</select>
         </div>
         <div className="routing-header routing-detail-header">
-          <div><h3>智能路由配置明细</h3><p>每个“市场 × 品种”合并为一行，买、卖方向分别配置模板</p></div>
+          <div><h3>智能路由配置明细</h3></div>
           <div className="routing-controls">
             {validationRules.length > 0 && <span id="routing-validation" className="validation-summary" role="alert">该品种不能为空（{validationRules.length}条）</span>}
             <div className="template-import-control">
